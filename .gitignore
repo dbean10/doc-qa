@@ -1,0 +1,11 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+chroma_data/
+.pulumi/
+.DS_Store
+.cursor/
+.vscode/
