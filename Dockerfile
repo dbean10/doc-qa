@@ -13,4 +13,4 @@ RUN adduser --disabled-password --gecos "" appuser
 USER appuser
 
 EXPOSE 8080
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["sh", "-c", "uv run uvicorn main:app --host 0.0.0.0 --port ${PORT:-8080}"]

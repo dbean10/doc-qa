@@ -26,3 +26,5 @@ markers = [
     "integration: marks tests as integration tests",
     "eval: marks tests as eval tests (calls LLM APIs)",
 ]
+testpaths = ["tests"]
+pythonpath = ["."]
