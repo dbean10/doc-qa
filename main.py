@@ -1,6 +1,7 @@
-def main():
-    print("Hello from doc-qa!")
+from fastapi import FastAPI
 
+app = FastAPI(title="Doc QA API")
 
-if __name__ == "__main__":
-    main()
+@app.get("/health")
+def health():
+    return {"status": "ok"}
