@@ -47,7 +47,7 @@ jobs:
             --platform managed \
             --no-allow-unauthenticated
 
- - name: Smoke test
+      - name: Smoke test
         run: |
           URL=$(gcloud run services describe ${{ env.SERVICE }} --region ${{ env.REGION }} --format "value(status.url)")
           TOKEN=$(gcloud auth print-identity-token --impersonate-service-account=${{ secrets.WIF_SERVICE_ACCOUNT }} --audiences="$URL" --include-email)
