@@ -49,7 +49,8 @@ jobs:
 
       - name: Smoke test
         run: |
-          URL=$(gcloud run services describe ${{ env.SERVICE }} \
-            --region ${{ env.REGION }} \
+          URL=$(gcloud run services describe ${{ env.SERVICE }} \\
+            --region ${{ env.REGION }} \\
             --format "value(status.url)")
-          curl -f "$URL/health" || exit 1
+          TOKEN=$(gcloud auth print-identity-token)
+          curl -f -H "Authorization: Bearer $TOKEN" "$URL/health" || exit 1
