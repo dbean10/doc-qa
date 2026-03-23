@@ -9,3 +9,5 @@ chroma_data/
 .DS_Store
 .cursor/
 .vscode/
+lab2_test_harness/results/
+doc_qa/results/
