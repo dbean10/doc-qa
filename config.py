@@ -15,7 +15,7 @@ never touches the client directly — the architectural contract is preserved.
 """
 
 import os
-from typing import Final
+from typing import Final, Generator
 
 # ─── Environment switch ───────────────────────────────────────────────────────
 ENVIRONMENT: Final[str] = os.getenv("ENVIRONMENT", "local")
@@ -90,8 +90,6 @@ def make_call_messages(
     if ENVIRONMENT == "local":
         return _call_ollama_messages(messages, system, temperature, max_tokens)
     return _call_anthropic_messages(messages, system, temperature, max_tokens)
-
-from typing import Generator
 
 def make_stream_call(
     messages: list[dict],

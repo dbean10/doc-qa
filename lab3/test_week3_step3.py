@@ -13,5 +13,5 @@ messages = [
 
 count = count_tokens(messages, system="You are a helpful assistant.")
 print(f"Token count: {count}")
-print(f"Step 1 actual was: 59")
+print("Step 1 actual was: 59")
 print(f"Difference: {abs(count - 59)}")

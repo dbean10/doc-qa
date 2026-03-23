@@ -47,7 +47,7 @@ EXPERIMENTS = [
 def run_lab():
     results = []
     print(f"\n{'='*60}")
-    print(f"WEEK 1 LAB — 10 API Calls")
+    print("WEEK 1 LAB — 10 API Calls")
     print(f"Model: {MODEL_STRING}")
     print(f"{'='*60}\n")
 
@@ -76,7 +76,7 @@ def run_lab():
     print(f"Avg latency:     {avg_latency:.0f}ms")
     print(f"Est. total cost: ${total_cost:.4f}")
     print(f"\nAlex's check  — MODEL_STRING pinned? → {MODEL_STRING}")
-    print(f"Morgan's check — No keys in code?    → Passed (make_call() only)")
+    print("Morgan's check — No keys in code?    → Passed (make_call() only)")
     print(f"Jordan's check — All calls logged?   → {all('timestamp' in r for r in results)}")
 
 
