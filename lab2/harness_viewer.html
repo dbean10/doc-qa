@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harness Results Viewer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0e0f11;
+    --bg2: #16181c;
+    --bg3: #1e2128;
+    --border: #2a2d35;
+    --border2: #363a44;
+    --text: #e2e4e9;
+    --text2: #8b8fa8;
+    --text3: #555a6e;
+    --green: #3dd68c;
+    --green-bg: #0d2e1f;
+    --red: #f47067;
+    --red-bg: #2e0f0d;
+    --amber: #e8b84b;
+    --amber-bg: #2a1f08;
+    --blue: #5b9cf6;
+    --blue-bg: #0d1a2e;
+    --purple: #a78bfa;
+    --purple-bg: #1a1030;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    z-index: 100;
+  }
+  .header-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .header-badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    background: var(--green-bg);
+    color: var(--green);
+    border: 1px solid #1a5c3a;
+  }
+  .header-spacer { flex: 1; }
+
+  /* ── Paste area ── */
+  .paste-zone {
+    margin: 32px;
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    transition: border-color 0.2s;
+  }
+  .paste-zone:focus-within { border-color: var(--blue); }
+  .paste-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 12px;
+  }
+  .paste-instruction {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+  .paste-instruction code {
+    font-family: var(--mono);
+    background: var(--bg3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--amber);
+    font-size: 12px;
+  }
+  textarea {
+    width: 100%;
+    min-height: 120px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 12px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  textarea:focus { border-color: var(--blue); }
+  textarea::placeholder { color: var(--text3); }
+  .parse-btn {
+    margin-top: 12px;
+    background: var(--blue);
+    color: #0a1628;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 20px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: opacity 0.15s;
+  }
+  .parse-btn:hover { opacity: 0.85; }
+
+  /* ── Controls ── */
+  .controls {
+    display: none;
+    padding: 0 32px 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .controls.visible { display: flex; }
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .filter-label {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 4px 10px;
+    outline: none;
+    cursor: pointer;
+  }
+  select:focus { border-color: var(--blue); }
+  .stats-bar {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .stats-bar span { color: var(--text2); }
+
+  /* ── Summary table ── */
+  .summary {
+    display: none;
+    margin: 0 32px 24px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .summary.visible { display: block; }
+  .summary-header {
+    background: var(--bg2);
+    padding: 10px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .summary-table th {
+    padding: 8px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    font-weight: 400;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .summary-table th:not(:first-child) { text-align: center; }
+  .summary-table td {
+    padding: 9px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .summary-table td:not(:first-child) { text-align: center; }
+  .summary-table tr:last-child td { border-bottom: none; }
+  .summary-table tr:hover td { background: var(--bg2); }
+
+  /* ── Results grid ── */
+  .results {
+    display: none;
+    padding: 0 32px 48px;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .results.visible { display: flex; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 180px 140px 80px 80px 80px 1fr;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .row:hover { border-color: var(--border2); }
+  .row.expanded { border-color: var(--blue); }
+
+  .cell {
+    padding: 10px 14px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    background: var(--bg2);
+  }
+  .cell:last-child { border-right: none; }
+  .row:hover .cell { background: var(--bg3); }
+  .row.expanded .cell { background: var(--bg3); }
+
+  .cell-variant {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+  }
+  .cell-input {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .cell-score {
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .cell-ms {
+    justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+  }
+  .cell-preview {
+    font-size: 12px;
+    color: var(--text2);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* Score colors */
+  .s2 { color: var(--green); }
+  .s1 { color: var(--amber); }
+  .s0 { color: var(--red); }
+
+  /* Category badges */
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .badge-normal { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+  .badge-adversarial { background: var(--red-bg); color: var(--red); border: 1px solid #5c1f1a; }
+  .badge-edge_case { background: var(--amber-bg); color: var(--amber); border: 1px solid #5c3a10; }
+
+  /* ── Expanded detail panel ── */
+  .detail {
+    display: none;
+    background: var(--bg);
+    border-top: 1px solid var(--border2);
+    padding: 20px;
+    grid-column: 1 / -1;
+  }
+  .detail.open { display: grid; }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .detail-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .detail-section.full { grid-column: 1 / -1; }
+  .detail-section-header {
+    padding: 8px 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .detail-section-body {
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .detail-section-body::-webkit-scrollbar { width: 4px; }
+  .detail-section-body::-webkit-scrollbar-track { background: var(--bg2); }
+  .detail-section-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px 14px;
+  }
+  .meta-item { }
+  .meta-key {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 2px;
+  }
+  .meta-val {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+  }
+
+  /* Latency color coding */
+  .ms-fast { color: var(--green); }
+  .ms-med  { color: var(--amber); }
+  .ms-slow { color: var(--red); }
+
+  /* Empty state */
+  .empty {
+    text-align: center;
+    padding: 64px 32px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">Harness Results Viewer</div>
+  <div class="header-badge">Week 2 · doc-qa</div>
+  <div class="header-spacer"></div>
+  <div id="run-id" style="font-family:var(--mono);font-size:11px;color:var(--text3)"></div>
+</div>
+
+<div class="paste-zone" id="paste-zone">
+  <div class="paste-label">Load results</div>
+  <div class="paste-instruction">
+    Run this in your terminal, then paste the output below:<br><br>
+    <code>cat lab2/results/run_20260322T182618Z.jsonl</code>
+  </div>
+  <textarea id="jsonl-input" placeholder="Paste JSONL content here — one JSON object per line..."></textarea>
+  <br>
+  <button class="parse-btn" onclick="parseResults()">Parse results</button>
+  <div id="parse-error" style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--red);"></div>
+</div>
+
+<div class="summary" id="summary">
+  <div class="summary-header">Per-variant summary</div>
+  <table class="summary-table" id="summary-table"></table>
+</div>
+
+<div class="controls" id="controls">
+  <div class="filter-group">
+    <span class="filter-label">Variant</span>
+    <select id="filter-variant" onchange="applyFilters()">
+      <option value="">All</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Category</span>
+    <select id="filter-category" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="normal">Normal</option>
+      <option value="edge_case">Edge case</option>
+      <option value="adversarial">Adversarial</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Content score</span>
+    <select id="filter-content" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="2">2 — good</option>
+      <option value="1">1 — ok</option>
+      <option value="0">0 — fail</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <span class="filter-label">Format score</span>
+    <select id="filter-format" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="1">1 — pass</option>
+      <option value="0">0 — fail</option>
+    </select>
+  </div>
+  <div class="stats-bar" id="stats-bar"></div>
+</div>
+
+<div class="results" id="results"></div>
+
+<script>
+let allResults = [];
+
+function parseResults() {
+  const raw = document.getElementById('jsonl-input').value.trim();
+  const errEl = document.getElementById('parse-error');
+  errEl.textContent = '';
+
+  if (!raw) { errEl.textContent = 'Paste your JSONL content first.'; return; }
+
+  const lines = raw.split('\n').filter(l => l.trim());
+  const parsed = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    try {
+      parsed.push(JSON.parse(lines[i]));
+    } catch(e) {
+      errEl.textContent = `Line ${i+1} is not valid JSON: ${e.message}`;
+      return;
+    }
+  }
+
+  if (!parsed.length) { errEl.textContent = 'No records found.'; return; }
+
+  allResults = parsed;
+  document.getElementById('paste-zone').style.display = 'none';
+
+  // Run ID
+  document.getElementById('run-id').textContent = parsed[0].run_id || '';
+
+  // Populate variant filter
+  const variants = [...new Set(parsed.map(r => r.variant_name))];
+  const sel = document.getElementById('filter-variant');
+  variants.forEach(v => {
+    const o = document.createElement('option');
+    o.value = v; o.textContent = v;
+    sel.appendChild(o);
+  });
+
+  buildSummary(parsed);
+  document.getElementById('summary').classList.add('visible');
+  document.getElementById('controls').classList.add('visible');
+  document.getElementById('results').classList.add('visible');
+  applyFilters();
+}
+
+function buildSummary(results) {
+  const byVariant = {};
+  results.forEach(r => {
+    if (!byVariant[r.variant_name]) byVariant[r.variant_name] = [];
+    byVariant[r.variant_name].push(r);
+  });
+
+  const rows = Object.entries(byVariant).map(([name, group]) => {
+    const n = group.length;
+    const fmtPct = Math.round(group.reduce((s,r) => s + r.format_score, 0) / n * 100);
+    const contentAvg = (group.reduce((s,r) => s + r.content_score, 0) / n).toFixed(2);
+    const avgMs = Math.round(group.reduce((s,r) => s + r.latency_ms, 0) / n);
+    const advGroup = group.filter(r => r.input_category === 'adversarial');
+    const advPass = advGroup.filter(r => r.content_score === 0).length;
+    return { name, n, fmtPct, contentAvg, avgMs, advFail: advPass, advTotal: advGroup.length };
+  });
+
+  const thead = `<tr>
+    <th>Variant</th><th>Format %</th><th>Content avg</th>
+    <th>Avg ms</th><th>Adv. failures</th>
+  </tr>`;
+
+  const tbody = rows.map(r => {
+    const fmtColor = r.fmtPct === 100 ? 'var(--green)' : r.fmtPct >= 80 ? 'var(--amber)' : 'var(--red)';
+    const cColor = parseFloat(r.contentAvg) >= 1.8 ? 'var(--green)' : parseFloat(r.contentAvg) >= 1.2 ? 'var(--amber)' : 'var(--red)';
+    const msColor = r.avgMs < 1000 ? 'var(--green)' : r.avgMs < 2000 ? 'var(--amber)' : 'var(--red)';
+    const advColor = r.advFail === r.advTotal ? 'var(--red)' : r.advFail > 0 ? 'var(--amber)' : 'var(--green)';
+    return `<tr>
+      <td style="font-family:var(--mono);color:var(--blue)">${r.name}</td>
+      <td style="color:${fmtColor}">${r.fmtPct}%</td>
+      <td style="color:${cColor}">${r.contentAvg}</td>
+      <td style="color:${msColor}">${r.avgMs}ms</td>
+      <td style="color:${advColor}">${r.advFail}/${r.advTotal}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('summary-table').innerHTML = thead + tbody;
+}
+
+function applyFilters() {
+  const variant  = document.getElementById('filter-variant').value;
+  const category = document.getElementById('filter-category').value;
+  const content  = document.getElementById('filter-content').value;
+  const format   = document.getElementById('filter-format').value;
+
+  const filtered = allResults.filter(r => {
+    if (variant  && r.variant_name    !== variant)        return false;
+    if (category && r.input_category  !== category)       return false;
+    if (content  && String(r.content_score) !== content)  return false;
+    if (format   && String(r.format_score)  !== format)   return false;
+    return true;
+  });
+
+  document.getElementById('stats-bar').innerHTML =
+    `Showing <span>${filtered.length}</span> of <span>${allResults.length}</span> results`;
+
+  renderRows(filtered);
+}
+
+function renderRows(results) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+
+  if (!results.length) {
+    container.innerHTML = '<div class="empty">No results match the current filters.</div>';
+    return;
+  }
+
+  results.forEach((r, idx) => {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+    wrapper.style.gap = '0';
+    wrapper.style.marginBottom = '2px';
+
+    const msClass = r.latency_ms < 1000 ? 'ms-fast' : r.latency_ms < 2500 ? 'ms-med' : 'ms-slow';
+    const fmtClass = r.format_score === 1 ? 's2' : 's0';
+    const conClass = r.content_score === 2 ? 's2' : r.content_score === 1 ? 's1' : 's0';
+    const badgeClass = `badge badge-${r.input_category}`;
+    const preview = (r.output_text || r.error || '—').slice(0, 120).replace(/\n/g, ' ');
+    const catLabel = r.input_category === 'edge_case' ? 'edge' : r.input_category;
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.innerHTML = `
+      <div class="cell cell-variant">${r.variant_name}</div>
+      <div class="cell cell-input">
+        <span class="${badgeClass}">${catLabel}</span>&nbsp;&nbsp;${r.input_id}
+      </div>
+      <div class="cell cell-score ${fmtClass}" title="format score">fmt ${r.format_score}</div>
+      <div class="cell cell-score ${conClass}" title="content score">con ${r.content_score}</div>
+      <div class="cell cell-ms ${msClass}">${r.latency_ms}ms</div>
+      <div class="cell cell-preview">${escHtml(preview)}</div>
+    `;
+
+    const detail = document.createElement('div');
+    detail.className = 'detail';
+    detail.innerHTML = buildDetail(r);
+
+    row.addEventListener('click', () => {
+      const isOpen = detail.classList.contains('open');
+      // Close all others
+      document.querySelectorAll('.detail.open').forEach(d => {
+        d.classList.remove('open');
+        d.closest('.row')?.classList.remove('expanded');
+      });
+      document.querySelectorAll('.row.expanded').forEach(r => r.classList.remove('expanded'));
+      if (!isOpen) {
+        detail.classList.add('open');
+        row.classList.add('expanded');
+      }
+    });
+
+    wrapper.appendChild(row);
+    wrapper.appendChild(detail);
+    container.appendChild(wrapper);
+  });
+}
+
+function buildDetail(r) {
+  const msClass = r.latency_ms < 1000 ? 'ms-fast' : r.latency_ms < 2500 ? 'ms-med' : 'ms-slow';
+  return `
+    <div class="detail-grid">
+      <div class="detail-section">
+        <div class="detail-section-header">System prompt (variant: ${escHtml(r.variant_name)})</div>
+        <div class="detail-section-body">${escHtml(r.system_prompt || '—')}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-header">User message (input: ${escHtml(r.input_id)})</div>
+        <div class="detail-section-body">${escHtml(r.user_message || '—')}</div>
+      </div>
+      <div class="detail-section full">
+        <div class="detail-section-header">Model output</div>
+        <div class="detail-section-body">${escHtml(r.output_text || r.error || '—')}</div>
+      </div>
+      <div class="detail-section full" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+        <div class="detail-section-header">Metrics</div>
+        <div class="meta-grid">
+          <div class="meta-item"><div class="meta-key">Format score</div><div class="meta-val ${r.format_score===1?'s2':'s0'}">${r.format_score}</div></div>
+          <div class="meta-item"><div class="meta-key">Content score</div><div class="meta-val ${r.content_score===2?'s2':r.content_score===1?'s1':'s0'}">${r.content_score}</div></div>
+          <div class="meta-item"><div class="meta-key">Latency</div><div class="meta-val ${msClass}">${r.latency_ms}ms</div></div>
+          <div class="meta-item"><div class="meta-key">Tokens in / out</div><div class="meta-val">${r.input_tokens} / ${r.output_tokens}</div></div>
+          <div class="meta-item"><div class="meta-key">Category</div><div class="meta-val">${r.input_category}</div></div>
+          <div class="meta-item"><div class="meta-key">Technique</div><div class="meta-val">${r.technique}</div></div>
+          <div class="meta-item"><div class="meta-key">Cost</div><div class="meta-val">$${r.cost_usd?.toFixed(5) ?? '0.00000'}</div></div>
+          <div class="meta-item"><div class="meta-key">Error</div><div class="meta-val ${r.error?'s0':'s2'}">${r.error || 'none'}</div></div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
