@@ -44,7 +44,7 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding: 40px 24px 80px;
+    padding: 0 0 80px;
   }
 
   .header {
@@ -194,7 +194,7 @@
 
   /* detail panel */
   .detail-panel {
-    position: sticky; top: 24px; background: var(--bg2);
+    position: sticky; top: 72px; background: var(--bg2);
     border: 1px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 400px;
   }
   .detail-header { padding: 16px 20px 14px; border-bottom: 1px solid var(--border); }
@@ -243,9 +243,88 @@
   .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
 
   @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── Navigation bar ── */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-link:hover {
+    background: var(--bg3);
+    border-color: var(--border2);
+    color: var(--text);
+  }
+  .nav-link.active {
+    background: var(--purple-bg);
+    border-color: var(--purple-bd);
+    color: var(--purple);
+  }
+  .nav-link.ci {
+    margin-left: auto;
+    color: var(--teal);
+    border-color: var(--teal-bd);
+    background: var(--teal-bg);
+  }
+  .nav-link.ci:hover {
+    background: #132e25;
+    border-color: var(--teal);
+  }
+  .nav-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
 </style>
 </head>
 <body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">doc-qa · <span>docs/</span></div>
+    <a class="nav-link" href="week1_architecture.html">Week 1</a>
+    <a class="nav-link active" href="week2_architecture.html">Week 2</a>
+    <a class="nav-link" href="week3_architecture.html">Week 3</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link ci" href="cicd_pipeline.html">CI/CD Pipeline</a>
+  </div>
+</nav>
+
+<div class="page" style="padding:40px 24px 0">
 
 <div class="header">
   <div class="header-meta">AI-First Bootcamp · Week 2 · Architecture Reference</div>
@@ -1298,5 +1377,7 @@ function select(id) {
     </div>`;
 }
 </script>
+
+</div><!-- .page -->
 </body>
 </html>

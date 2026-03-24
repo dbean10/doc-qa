@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 1 — First API Calls Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a4010;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Navigation bar ── */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-link:hover {
+    background: var(--bg3);
+    border-color: var(--border2);
+    color: var(--text);
+  }
+  .nav-link.active {
+    background: var(--purple-bg);
+    border-color: var(--purple-bd);
+    color: var(--purple);
+  }
+  .nav-link.ci {
+    margin-left: auto;
+    color: var(--teal);
+    border-color: var(--teal-bd);
+    background: var(--teal-bg);
+  }
+  .nav-link.ci:hover {
+    background: #132e25;
+    border-color: var(--teal);
+  }
+  .nav-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+  /* ── Page content ── */
+  .page { padding: 40px 24px 0; }
+
+  .header {
+    max-width: 960px;
+    margin: 0 auto 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 { font-size: 26px; font-weight: 500; color: #e8f0ff; letter-spacing: -0.02em; }
+  .header h1 span { color: var(--teal); }
+  .header-sub { margin-top: 8px; font-size: 13px; color: var(--text2); font-weight: 300; }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 3px; margin-left: 10px; vertical-align: middle;
+    background: #1a2540; color: var(--text2); border: 1px solid var(--border2);
+  }
+
+  .main {
+    max-width: 960px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start;
+  }
+
+  .diagram-panel {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 28px 24px;
+  }
+
+  .layer-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; padding-left: 2px;
+  }
+  .layer { margin-bottom: 8px; }
+
+  .connectors { display: flex; justify-content: space-around; padding: 0 20px; height: 32px; align-items: center; }
+  .connector-line { width: 1px; height: 32px; background: var(--border2); position: relative; }
+  .connector-line::after {
+    content: ''; position: absolute; bottom: -4px; left: -3px;
+    width: 0; height: 0; border-left: 4px solid transparent;
+    border-right: 4px solid transparent; border-top: 5px solid var(--border2);
+  }
+
+  .node {
+    border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    transition: all 0.15s ease; border: 1px solid transparent; position: relative;
+  }
+  .node:hover { transform: translateY(-1px); }
+  .node.active { transform: translateY(-1px); }
+  .node-title { font-family: var(--mono); font-size: 12px; font-weight: 600; }
+  .node-sub { font-size: 11px; font-weight: 300; margin-top: 2px; opacity: 0.7; }
+
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd);   }
+  .node-gray   .node-title { color: var(--gray); }
+  .node-gray:hover, .node-gray.active   { border-color: var(--gray);   background: #1e2a38; }
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .node-purple .node-title { color: var(--purple); }
+  .node-purple:hover, .node-purple.active { border-color: var(--purple); background: #251f48; }
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .node-teal   .node-title { color: var(--teal); }
+  .node-teal:hover, .node-teal.active   { border-color: var(--teal);   background: #132e25; }
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .node-coral  .node-title { color: var(--coral); }
+  .node-coral:hover, .node-coral.active  { border-color: var(--coral);  background: #321a10; }
+  .node-amber  { background: var(--amber-bg);  border-color: var(--amber-bd);  }
+  .node-amber  .node-title { color: var(--amber); }
+  .node-amber:hover, .node-amber.active  { border-color: var(--amber);  background: #2e2010; }
+  .node-green  { background: var(--green-bg);  border-color: var(--green-bd);  }
+  .node-green  .node-title { color: var(--green); }
+  .node-green:hover, .node-green.active  { border-color: var(--green);  background: #142e1e; }
+
+  .container-node { border-radius: 10px; padding: 14px 16px; border: 1px solid; }
+  .container-node .container-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .inner-grid { display: grid; gap: 8px; }
+  .inner-grid-2 { grid-template-columns: 1fr 1fr; }
+  .inner-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .cn-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .cn-coral  .container-title { color: var(--coral); }
+  .cn-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .cn-teal   .container-title { color: var(--teal); }
+  .cn-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .cn-purple .container-title { color: var(--purple); }
+
+  .user-row { display: flex; justify-content: center; }
+  .user-node {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-bg); border: 1px solid var(--gray-bd);
+    border-radius: 8px; padding: 10px 20px; cursor: pointer;
+    transition: all 0.15s; width: 220px; justify-content: center;
+  }
+  .user-node:hover { border-color: var(--gray); background: #1e2a38; }
+  .user-node .node-title { color: var(--gray); font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  .jsonl-tag {
+    position: absolute; top: 8px; right: 8px;
+    font-family: var(--mono); font-size: 9px;
+    background: #1a2a1a; color: var(--green);
+    border: 1px solid #2a4a2a; border-radius: 3px; padding: 1px 5px;
+  }
+
+  /* detail panel */
+  .detail-panel {
+    position: sticky; top: 72px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden; min-height: 400px;
+  }
+  .detail-header { padding: 16px 20px 14px; border-bottom: 1px solid var(--border); }
+  .detail-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .detail-title { font-family: var(--mono); font-size: 15px; font-weight: 600; color: #e8f0ff; }
+  .detail-subtitle { font-size: 12px; color: var(--text2); font-weight: 300; margin-top: 4px; }
+  .detail-body { padding: 18px 20px; animation: fadeIn 0.18s ease; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-section-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .detail-desc { font-size: 13px; color: var(--text); line-height: 1.65; font-weight: 300; }
+  .detail-code {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-family: var(--mono); font-size: 11px; color: #a8c0e0;
+    line-height: 1.7; white-space: pre; overflow-x: auto;
+  }
+  .detail-code .kw { color: var(--purple); }
+  .detail-code .fn { color: var(--teal); }
+  .detail-code .st { color: var(--amber); }
+  .detail-code .cm { color: var(--text3); }
+  .detail-code .co { color: var(--coral); }
+  .detail-code .gr { color: var(--green); }
+  .detail-rules { list-style: none; }
+  .detail-rules li {
+    font-size: 12px; color: var(--text2); padding: 5px 0;
+    border-bottom: 1px solid var(--border); font-weight: 300;
+    display: flex; gap: 8px; align-items: baseline; line-height: 1.5;
+  }
+  .detail-rules li:last-child { border-bottom: none; }
+  .detail-rules li::before { content: '→'; color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 11px; }
+  .owner-tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+  .owner-morgan { background: #2a1010; color: #f07070; border: 1px solid #5a2020; }
+  .owner-jordan { background: #102a10; color: #70d070; border: 1px solid #205a20; }
+  .owner-alex   { background: #10102a; color: #7070f0; border: 1px solid #20205a; }
+  .owner-sam    { background: #2a2010; color: #d0a040; border: 1px solid #5a4020; }
+  .detail-placeholder { padding: 48px 24px; text-align: center; }
+  .detail-placeholder .icon { font-size: 32px; margin-bottom: 16px; opacity: 0.3; }
+  .detail-placeholder p { font-size: 13px; color: var(--text3); font-weight: 300; line-height: 1.6; }
+
+  .legend {
+    max-width: 960px; margin: 32px auto 0; display: flex; gap: 24px;
+    flex-wrap: wrap; padding-top: 20px; border-top: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">doc-qa · <span>docs/</span></div>
+    <a class="nav-link active" href="week1_architecture.html">Week 1</a>
+    <a class="nav-link" href="week2_architecture.html">Week 2</a>
+    <a class="nav-link" href="week3_architecture.html">Week 3</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link ci" href="cicd_pipeline.html">CI/CD Pipeline</a>
+  </div>
+</nav>
+
+<div class="page">
+
+<div class="header">
+  <div class="header-meta">AI-First Bootcamp · Week 1 · Architecture Reference</div>
+  <h1>First API <span>Calls</span>
+    <span class="badge">click any component</span>
+  </h1>
+  <div class="header-sub">Phase 1 — Foundations · dbean10/doc-qa · config.py + lab1_first_calls.py</div>
+</div>
+
+<div class="main">
+
+  <div class="diagram-panel">
+
+    <!-- Layer 0: Developer -->
+    <div class="layer-label">entry point</div>
+    <div class="layer user-row">
+      <div class="user-node node" data-id="lab1" onclick="select('lab1')">
+        <div class="node-title">lab1_first_calls.py</div>
+      </div>
+    </div>
+
+    <div class="connectors" style="justify-content:center;">
+      <div style="display:flex;flex-direction:column;align-items:center;">
+        <div class="connector-line"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">uv run python lab1_first_calls.py</div>
+      </div>
+    </div>
+
+    <!-- Layer 1: config.py -->
+    <div class="layer-label">architectural contract</div>
+    <div class="layer">
+      <div class="container-node cn-coral" style="cursor:default">
+        <div class="container-title" style="cursor:pointer" onclick="select('config')">config.py — the single seam</div>
+        <div class="inner-grid inner-grid-3">
+          <div class="node node-coral" data-id="env_switch" onclick="select('env_switch')">
+            <div class="node-title">ENVIRONMENT</div>
+            <div class="node-sub">os.getenv("ENVIRONMENT", "local")</div>
+          </div>
+          <div class="node node-coral" data-id="model_strings" onclick="select('model_strings')">
+            <div class="node-title">model strings</div>
+            <div class="node-sub">LOCAL_MODEL · PROD_MODEL</div>
+          </div>
+          <div class="node node-coral" data-id="make_call" onclick="select('make_call')">
+            <div class="node-title">make_call()</div>
+            <div class="node-sub">single entry point</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connectors" style="padding:0 100px">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Layer 2: Private implementations -->
+    <div class="layer-label">private routing layer</div>
+    <div class="layer inner-grid inner-grid-2" style="gap:8px">
+      <div class="node node-teal" data-id="call_ollama" onclick="select('call_ollama')">
+        <div class="node-title">_call_ollama()</div>
+        <div class="node-sub" style="margin-top:6px">openai.OpenAI client</div>
+        <div class="node-sub">base_url: localhost:11434/v1</div>
+        <div class="node-sub">api_key: "ollama"</div>
+        <div class="node-sub">→ returns _Response</div>
+      </div>
+      <div class="node node-teal" data-id="call_anthropic" onclick="select('call_anthropic')">
+        <div class="node-title">_call_anthropic()</div>
+        <div class="node-sub" style="margin-top:6px">anthropic.Anthropic client</div>
+        <div class="node-sub">api_key: from os.getenv()</div>
+        <div class="node-sub">model: claude-sonnet-4-6</div>
+        <div class="node-sub">→ returns _Response</div>
+      </div>
+    </div>
+
+    <div class="connectors" style="padding:0 100px">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Layer 3: Response wrapper -->
+    <div class="layer-label">normalisation layer</div>
+    <div class="layer">
+      <div class="node node-purple" data-id="response" onclick="select('response')">
+        <div class="node-title">_Response</div>
+        <div class="node-sub" style="margin-top:6px">Unified wrapper — both backends return the same shape</div>
+        <div class="node-sub">resp.content[0].text · resp.usage.input_tokens · resp.usage.output_tokens</div>
+      </div>
+    </div>
+
+    <div class="connectors" style="padding:0 200px">
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Layer 4: Lab output -->
+    <div class="layer-label">lab output</div>
+    <div class="layer">
+      <div class="node node-green" data-id="lab_output" onclick="select('lab_output')" style="position:relative">
+        <div class="jsonl-tag">JSONL</div>
+        <div class="node-title">10 calls · logged results</div>
+        <div class="node-sub" style="margin-top:6px">Jordan: latency + cost logged per call · Morgan: API keys from env only · Alex: MODEL_STRING pinned</div>
+      </div>
+    </div>
+
+    <!-- Separator -->
+    <div style="height:1px;background:var(--border);margin:20px 0"></div>
+
+    <!-- Layer 5: Model layer -->
+    <div class="layer-label">model layer</div>
+    <div class="layer inner-grid inner-grid-2" style="gap:8px">
+      <div class="node node-gray" data-id="ollama_model" onclick="select('ollama_model')">
+        <div class="node-title">Ollama (local)</div>
+        <div class="node-sub" style="margin-top:4px">llama3.2 · $0 · functional iteration</div>
+        <div class="node-sub">OpenAI-compatible REST API</div>
+        <div class="node-sub">http://localhost:11434</div>
+      </div>
+      <div class="node node-gray" data-id="anthropic_api" onclick="select('anthropic_api')">
+        <div class="node-title">Anthropic API (prod)</div>
+        <div class="node-sub" style="margin-top:4px">claude-sonnet-4-6</div>
+        <div class="node-sub">Key from Secret Manager</div>
+        <div class="node-sub">Required for security evals</div>
+      </div>
+    </div>
+
+    <!-- Separator -->
+    <div style="height:1px;background:var(--border);margin:20px 0"></div>
+
+    <!-- Week 1 bug fix -->
+    <div class="layer-label">week 1 — the bug fix that established the pattern</div>
+    <div class="layer inner-grid inner-grid-2" style="gap:8px">
+      <div class="node node-amber" data-id="bug_before" onclick="select('bug_before')">
+        <div class="node-title">before (broken)</div>
+        <div class="node-sub" style="margin-top:4px">config.py returned a raw openai.OpenAI client</div>
+        <div class="node-sub">Lab code called .chat.completions.create()</div>
+        <div class="node-sub">Anthropic client uses .messages.create()</div>
+        <div class="node-sub">Swap = rewrite all lab code</div>
+      </div>
+      <div class="node node-green" data-id="bug_after" onclick="select('bug_after')">
+        <div class="node-title">after (fixed)</div>
+        <div class="node-sub" style="margin-top:4px">config.py returns _Response</div>
+        <div class="node-sub">Lab code calls make_call() only</div>
+        <div class="node-sub">Both backends normalised to same shape</div>
+        <div class="node-sub">Swap = change ENVIRONMENT</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Detail panel -->
+  <div class="detail-panel">
+    <div class="detail-placeholder" id="detail-placeholder">
+      <div class="icon">⬡</div>
+      <p>Click any component to see a detailed explanation, code example, and team sign-off notes.</p>
+    </div>
+    <div id="detail-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<div class="legend" style="padding:20px 0 0">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--coral-bg);border:1px solid var(--coral-bd)"></div>Architectural contract</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--teal-bg);border:1px solid var(--teal-bd)"></div>Private routing</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple-bg);border:1px solid var(--purple-bd)"></div>Normalisation</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border:1px solid var(--green-bd)"></div>Output</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:1px solid var(--amber-bd)"></div>Bug fix</div>
+  <div class="legend-item" style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3)">dbean10/doc-qa · config.py</div>
+</div>
+
+</div><!-- .page -->
+
+<script>
+const DATA = {
+  lab1: {
+    tag: 'Entry point',
+    title: 'lab1_first_calls.py',
+    subtitle: '10 API calls — temperature ladder, latency, cost tracking',
+    color: 'var(--gray)',
+    desc: 'The Week 1 lab script. Makes 10 API calls across a temperature ladder (0.0 to 1.0), measuring latency and cost per call. The first time the team\'s definition of done process runs: Jordan checks latency logging, Morgan checks no keys in code, Alex checks MODEL_STRING is pinned.',
+    code: `<span class="cm"># lab1_first_calls.py — entry point</span>
+<span class="kw">from</span> config <span class="kw">import</span> make_call, MODEL_STRING
+
+results = []
+<span class="kw">for</span> temp <span class="kw">in</span> [<span class="co">0.0</span>, <span class="co">0.1</span>, <span class="co">0.3</span>, <span class="co">0.5</span>, <span class="co">0.7</span>,
+             <span class="co">0.8</span>, <span class="co">0.9</span>, <span class="co">1.0</span>, <span class="co">0.0</span>, <span class="co">0.0</span>]:
+    resp = <span class="fn">make_call</span>(
+        system_prompt=<span class="st">"You are a helpful assistant."</span>,
+        user_message=<span class="st">"Describe the colour blue in one sentence."</span>,
+        temperature=temp,
+    )
+    results.<span class="fn">append</span>({
+        <span class="st">"temperature"</span>: temp,
+        <span class="st">"text"</span>: resp.content[<span class="co">0</span>].text,
+        <span class="st">"input_tokens"</span>: resp.usage.input_tokens,
+        <span class="st">"output_tokens"</span>: resp.usage.output_tokens,
+    })`,
+    rules: [
+      'Never imports openai or anthropic directly — only imports from config.py',
+      'All 10 calls use make_call() — the first enforcement of the abstraction',
+      'Temperature ladder: observe how output varies across 0.0 → 1.0',
+      'Three temperature=0.0 calls included to verify reproducibility'
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Latency + cost logged per call' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'No keys in code — verified' },
+      { label: 'Alex', cls: 'owner-alex', note: 'MODEL_STRING pinned, not hardcoded' }
+    ]
+  },
+
+  config: {
+    tag: 'Architectural contract',
+    title: 'config.py',
+    subtitle: 'The single seam between local dev and production',
+    color: 'var(--coral)',
+    desc: 'config.py is not a convenience file — it is the architectural contract for the entire course. Nothing outside this file knows which model is running, which client is being used, or which backend is active. ENVIRONMENT=local routes to Ollama at zero cost. ENVIRONMENT=gcp routes to the Anthropic API. This contract holds through all 8 weeks.',
+    code: `<span class="cm"># config.py — the contract</span>
+<span class="kw">ENVIRONMENT</span>: Final[str] = os.<span class="fn">getenv</span>(<span class="st">"ENVIRONMENT"</span>, <span class="st">"local"</span>)
+
+<span class="cm"># Model strings — always version-pinned</span>
+LOCAL_MODEL: Final[str] = <span class="st">"llama3.2"</span>
+PROD_MODEL:  Final[str] = <span class="st">"claude-sonnet-4-6"</span>
+MODEL_STRING: Final[str] = (
+    LOCAL_MODEL <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>
+    <span class="kw">else</span> PROD_MODEL
+)
+
+<span class="cm"># Quick verification</span>
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    target = <span class="st">"Ollama ($0)"</span> <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span> <span class="kw">else</span> <span class="st">"Anthropic (costs)"</span>
+    <span class="fn">print</span>(<span class="st">f"Config OK — routing to {target}"</span>)`,
+    rules: [
+      'The only file allowed to import openai or anthropic — ever',
+      'Nothing outside config.py ever branches on ENVIRONMENT',
+      'Model strings are Final constants — never passed as arguments',
+      'uv run python config.py as a smoke test after any environment change'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Architectural contract — reviewed every lab' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'No keys here — keys come from env only' },
+      { label: 'Sam', cls: 'owner-sam', note: 'Routing verified in both local and gcp modes' }
+    ]
+  },
+
+  env_switch: {
+    tag: 'config.py',
+    title: 'ENVIRONMENT switch',
+    subtitle: 'os.getenv("ENVIRONMENT", "local") — defaults to local',
+    color: 'var(--coral)',
+    desc: 'A single environment variable controls which backend every call in the system uses. Defaults to "local" so no API keys are needed during development. The only valid values are "local" and "gcp". Every function in config.py branches on this value — and nothing outside config.py ever reads it.',
+    code: `<span class="cm"># Switch at runtime — no code change needed</span>
+ENVIRONMENT=local uv run python lab1_first_calls.py
+<span class="cm"># → routes to Ollama · zero cost</span>
+
+ENVIRONMENT=gcp uv run python lab1_first_calls.py
+<span class="cm"># → routes to Anthropic · real API · costs money</span>
+
+<span class="cm"># In CI (deploy.yml) it is set as an env var:</span>
+<span class="kw">env</span>:
+  <span class="kw">ENVIRONMENT</span>: <span class="st">gcp</span>
+
+<span class="cm"># Sam: this is the zero-cost local dev guarantee</span>
+<span class="cm"># You never accidentally call the real API</span>`,
+    rules: [
+      'Defaults to "local" — safe by default, never accidentally calls real API',
+      'In prod: set via Cloud Run environment variable configuration',
+      'In CI: set as env var in the deploy job, never in ci.yml (that runs local)',
+      'Sam: do not skip Ollama setup thinking you will use the real API during dev'
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Zero-cost local dev guaranteed by this default' }]
+  },
+
+  model_strings: {
+    tag: 'config.py',
+    title: 'model strings',
+    subtitle: 'Version-pinned Final constants — never "latest"',
+    color: 'var(--coral)',
+    desc: 'Model strings are declared as Final constants at the top of config.py and never changed by application code. Pinning to an explicit version prevents silent behaviour changes when a provider updates their "latest" alias. Alex\'s rule: if you are not pinned, you are not reproducible.',
+    code: `LOCAL_MODEL:  Final[str] = <span class="st">"llama3.2"</span>
+PROD_MODEL:   Final[str] = <span class="st">"claude-sonnet-4-6"</span>
+LOCAL_EMBED:  Final[str] = <span class="st">"nomic-embed-text"</span>
+PROD_EMBED:   Final[str] = <span class="st">"text-embedding-3-large"</span>
+
+MODEL_STRING: Final[str] = (
+    LOCAL_MODEL <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>
+    <span class="kw">else</span> PROD_MODEL
+)
+
+<span class="cm"># test_config.py verifies this:</span>
+<span class="kw">def</span> <span class="fn">test_model_strings_are_pinned</span>():
+    <span class="kw">assert</span> <span class="st">"latest"</span> <span class="kw">not in</span> LOCAL_MODEL
+    <span class="kw">assert</span> <span class="st">"latest"</span> <span class="kw">not in</span> PROD_MODEL`,
+    rules: [
+      'Always pinned — never "latest", "default", or any alias',
+      'test_config.py has a test asserting no "latest" in model strings',
+      'When upgrading a model: update the constant here, run full test suite, bump version in commit message',
+      'EMBED_MODEL and LLM_MODEL are separate constants — independently switchable'
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Pinned = reproducible. Enforced in test_config.py.' }]
+  },
+
+  make_call: {
+    tag: 'config.py',
+    title: 'make_call()',
+    subtitle: 'Single entry point for all LLM inference in the project',
+    color: 'var(--coral)',
+    desc: 'The most important function in config.py. Takes system_prompt, user_message, temperature, and max_tokens. Routes to _call_ollama() or _call_anthropic() based on ENVIRONMENT. Returns _Response in both cases. Lab code, harness code, and application code all call this — nothing else.',
+    code: `<span class="kw">def</span> <span class="fn">make_call</span>(
+    system_prompt: <span class="co">str</span>,
+    user_message:  <span class="co">str</span>,
+    temperature:   <span class="co">float</span>,
+    max_tokens:    <span class="co">int</span> = <span class="co">512</span>,
+) -> <span class="co">_Response</span>:
+    <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+        <span class="kw">return</span> <span class="fn">_call_ollama</span>(system_prompt, user_message,
+                            temperature, max_tokens)
+    <span class="kw">return</span> <span class="fn">_call_anthropic</span>(system_prompt, user_message,
+                             temperature, max_tokens)
+
+<span class="cm"># Morgan: system_prompt and user_message are ALWAYS</span>
+<span class="cm"># kept separate — never concatenated. First injection defense.</span>`,
+    rules: [
+      'system_prompt and user_message are always separate parameters — never concatenated',
+      'Returns _Response in both cases — caller never knows which backend was used',
+      'This function is preserved unchanged from Week 1 through all 8 weeks',
+      'Week 3 adds make_call_messages() alongside — make_call() is never removed',
+      'Morgan: keeping them separate is the first injection defense'
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'system and user always separate — injection defense' },
+      { label: 'Sam', cls: 'owner-sam', note: 'Single entry point — lab code never touches a client' }
+    ]
+  },
+
+  call_ollama: {
+    tag: 'config.py · private',
+    title: '_call_ollama()',
+    subtitle: 'Local backend — openai client at localhost:11434',
+    color: 'var(--teal)',
+    desc: 'The local implementation. Uses the OpenAI Python SDK pointing at Ollama\'s OpenAI-compatible REST endpoint. api_key="ollama" is a placeholder — Ollama requires the field but ignores the value. Returns a _Response wrapping the output.',
+    code: `<span class="kw">def</span> <span class="fn">_call_ollama</span>(system_prompt, user_message,
+                 temperature, max_tokens) -> <span class="co">_Response</span>:
+    <span class="kw">import</span> openai
+    client = openai.<span class="fn">OpenAI</span>(
+        base_url=<span class="st">f"{OLLAMA_BASE_URL}/v1"</span>,
+        api_key=<span class="st">"ollama"</span>,    <span class="cm"># required field, value ignored</span>
+    )
+    resp = client.chat.completions.<span class="fn">create</span>(
+        model=MODEL_STRING,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        messages=[
+            {<span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: system_prompt},
+            {<span class="st">"role"</span>: <span class="st">"user"</span>,   <span class="st">"content"</span>: user_message},
+        ],
+    )
+    text    = resp.choices[<span class="co">0</span>].message.content
+    in_tok  = getattr(resp.usage, <span class="st">"prompt_tokens"</span>,     <span class="co">0</span>) or <span class="co">0</span>
+    out_tok = getattr(resp.usage, <span class="st">"completion_tokens"</span>, <span class="co">0</span>) or <span class="co">0</span>
+    <span class="kw">return</span> <span class="fn">_Response</span>(text, in_tok, out_tok)`,
+    rules: [
+      'Uses OpenAI SDK — NOT the Ollama Python library — for consistency with streaming in Week 3',
+      'api_key="ollama" is required by the SDK but ignored by Ollama server',
+      'Token counts from Ollama use prompt_tokens / completion_tokens field names (OpenAI convention)',
+      'getattr with fallback 0: Ollama may return None for token counts on some models'
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'OpenAI SDK for Ollama — consistent with Week 3 streaming' }]
+  },
+
+  call_anthropic: {
+    tag: 'config.py · private',
+    title: '_call_anthropic()',
+    subtitle: 'Production backend — Anthropic SDK',
+    color: 'var(--teal)',
+    desc: 'The production implementation. Uses the Anthropic Python SDK. API key read from environment variable at call time — never stored, never cached. Morgan\'s rule: if it is not in Secret Manager in prod, it does not exist.',
+    code: `<span class="kw">def</span> <span class="fn">_call_anthropic</span>(system_prompt, user_message,
+                    temperature, max_tokens) -> <span class="co">_Response</span>:
+    <span class="kw">import</span> anthropic
+    api_key = os.<span class="fn">getenv</span>(<span class="st">"ANTHROPIC_API_KEY"</span>)
+    <span class="kw">if not</span> api_key:
+        <span class="kw">raise</span> <span class="fn">EnvironmentError</span>(
+            <span class="st">"ANTHROPIC_API_KEY not found. "</span>
+            <span class="st">"In prod this must come from Secret Manager."</span>
+        )
+    client = anthropic.<span class="fn">Anthropic</span>(api_key=api_key)
+    resp = client.messages.<span class="fn">create</span>(
+        model=MODEL_STRING,
+        max_tokens=max_tokens,
+        temperature=temperature,
+        system=system_prompt,
+        messages=[{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: user_message}],
+    )
+    <span class="kw">return</span> <span class="fn">_Response</span>(
+        resp.content[<span class="co">0</span>].text,
+        resp.usage.input_tokens,
+        resp.usage.output_tokens,
+    )`,
+    rules: [
+      'API key read at call time — never stored as a class or module variable',
+      'Raises EnvironmentError with explicit Secret Manager message if key missing',
+      'In prod: key is injected by Cloud Run from Secret Manager at container start',
+      'Morgan: git log --all -p | grep -i api_key before every lab submission'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Key from env at call time — never stored' }]
+  },
+
+  response: {
+    tag: 'Normalisation layer',
+    title: '_Response',
+    subtitle: 'Unified wrapper — both backends return the same shape',
+    color: 'var(--purple)',
+    desc: 'The _Response class normalises the output of both backends into one consistent shape. The Anthropic SDK returns resp.content[0].text and resp.usage.input_tokens. The OpenAI SDK (Ollama) returns resp.choices[0].message.content and resp.usage.prompt_tokens. _Response bridges the two. Lab code reads .content[0].text and .usage.input_tokens regardless of which backend ran.',
+    code: `<span class="kw">class</span> <span class="fn">_Response</span>:
+    <span class="st">"""Minimal response wrapper — mirrors Anthropic SDK shape."""</span>
+
+    <span class="kw">def</span> <span class="fn">__init__</span>(self, text: <span class="co">str</span>, input_tokens: <span class="co">int</span>,
+                 output_tokens: <span class="co">int</span>):
+        self.content = [
+            <span class="fn">type</span>(<span class="st">"Block"</span>, (), {<span class="st">"text"</span>: text})()
+        ]
+        self.usage = <span class="fn">type</span>(
+            <span class="st">"Usage"</span>, (),
+            {
+                <span class="st">"input_tokens"</span>:  input_tokens,
+                <span class="st">"output_tokens"</span>: output_tokens,
+            },
+        )()
+
+<span class="cm"># Usage in lab code — same regardless of backend:</span>
+text       = resp.content[<span class="co">0</span>].text
+in_tokens  = resp.usage.input_tokens
+out_tokens = resp.usage.output_tokens`,
+    rules: [
+      'Mirrors the Anthropic SDK shape — .content[0].text, .usage.input_tokens',
+      'This is the Week 1 bug fix: the original config.py returned a raw client, breaking the abstraction',
+      'Lab code written against _Response shape will work in both local and prod modes',
+      'Do not add fields to _Response without updating all consumers'
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Normalisation is the contract — Anthropic SDK shape' }]
+  },
+
+  lab_output: {
+    tag: 'Lab output',
+    title: '10 calls · logged results',
+    subtitle: 'First enforcement of Jordan\'s quality gates',
+    color: 'var(--green)',
+    desc: 'The lab makes 10 calls and logs each result. Week 1 establishes the logging pattern that all subsequent weeks follow: every call logged with timestamp, latency, token counts, and estimated cost. Jordan\'s check: all 10 results have a timestamp field. Morgan\'s check: no keys in code. Alex\'s check: MODEL_STRING is pinned.',
+    code: `<span class="cm"># Logged per call — Week 1 establishes the pattern</span>
+result = {
+    <span class="st">"timestamp"</span>:    time.<span class="fn">strftime</span>(<span class="st">"%Y-%m-%dT%H:%M:%SZ"</span>),
+    <span class="st">"temperature"</span>:  temp,
+    <span class="st">"text"</span>:         resp.content[<span class="co">0</span>].text,
+    <span class="st">"input_tokens"</span>: resp.usage.input_tokens,
+    <span class="st">"output_tokens"</span>:resp.usage.output_tokens,
+    <span class="st">"latency_ms"</span>:   latency_ms,
+    <span class="st">"cost_usd"</span>:     cost_usd,
+}
+
+<span class="cm"># Jordan's check: all(&#39;timestamp&#39; in r for r in results)</span>
+<span class="cm"># Morgan's check: no keys in git history</span>
+<span class="cm"># Alex's check: MODEL_STRING pinned, not hardcoded</span>`,
+    rules: [
+      'Every call logged: timestamp, latency_ms, input_tokens, output_tokens, cost_usd',
+      'This log schema is the ancestor of the JSONL schema formalised in Week 2',
+      'Three temperature=0.0 calls verify reproducibility: identical temperature should give near-identical output',
+      'Cold start observation: first call is significantly slower — sets up the Week 3 warmup pattern'
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: 'All calls logged — timestamp required' },
+      { label: 'Alex', cls: 'owner-alex', note: 'MODEL_STRING pinned, not hardcoded in calls' }
+    ]
+  },
+
+  ollama_model: {
+    tag: 'Model layer · local',
+    title: 'Ollama (local)',
+    subtitle: 'llama3.2 · 2.0GB · zero cost · functional iteration',
+    color: 'var(--gray)',
+    desc: 'Ollama runs llama3.2 locally on Apple Silicon (M-series). No API keys required. No cost. Responds via an OpenAI-compatible REST API at localhost:11434. Auto-starts on login via brew services. Used for all local development — the zero-cost iteration environment.',
+    code: `<span class="cm"># Verify Ollama is running:</span>
+curl http://localhost:11434/api/tags
+
+<span class="cm"># Models required:</span>
+ollama list
+<span class="cm"># nomic-embed-text  274MB  ← embedding model</span>
+<span class="cm"># llama3.2          2.0GB  ← inference model</span>
+
+<span class="cm"># Pull if missing:</span>
+ollama pull llama3.2
+ollama pull nomic-embed-text
+
+<span class="cm"># Auto-starts via brew services:</span>
+brew services list | grep ollama`,
+    rules: [
+      'Runs on Apple Silicon M-series — configured for arm64, not x86',
+      'Auto-starts via brew services — verify with brew services list',
+      'Cold start: first inference call loads model into memory — 10-15x slower than warm',
+      'Sam: do not skip Ollama setup thinking you will use the real API during dev'
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Local dev — never skip setup' }]
+  },
+
+  anthropic_api: {
+    tag: 'Model layer · production',
+    title: 'Anthropic API',
+    subtitle: 'claude-sonnet-4-6 · version-pinned · keys from Secret Manager',
+    color: 'var(--gray)',
+    desc: 'The production model. claude-sonnet-4-6 is pinned as PROD_MODEL in config.py. API key is never stored in code, environment files, or CI secrets — it lives in GCP Secret Manager and is injected at Cloud Run container start.',
+    code: `<span class="cm"># Key injection at Cloud Run start:</span>
+<span class="cm"># Secret Manager → ANTHROPIC_API_KEY env var</span>
+<span class="cm"># Never in .env, never in GitHub secrets</span>
+
+<span class="cm"># Test locally with Secret Manager:</span>
+ENVIRONMENT=gcp \\
+  ANTHROPIC_API_KEY=$(gcloud secrets versions access \\
+    latest --secret=ANTHROPIC_API_KEY) \\
+  uv run python lab1_first_calls.py
+
+<span class="cm"># Morgan's pre-submission check:</span>
+git log --all -p | grep -i api_key
+<span class="cm"># Must return nothing</span>`,
+    rules: [
+      'Model string always pinned: "claude-sonnet-4-6" — never "latest"',
+      'API key from Secret Manager — never .env file, never GitHub Actions secret',
+      'Morgan: runs git log --all -p | grep -i api_key before every lab approval',
+      'Week 2 finding: claude-sonnet-4-6 resists injection; llama3.2 does not'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Keys from Secret Manager only — verified every lab' }]
+  },
+
+  bug_before: {
+    tag: 'Week 1 bug fix · before',
+    title: 'Before — broken abstraction',
+    subtitle: 'config.py returned a raw client object',
+    color: 'var(--amber)',
+    desc: 'The original config.py returned an openai.OpenAI client in local mode. Lab code called client.chat.completions.create(). When the Anthropic backend was added, it uses client.messages.create() — a completely different interface. Swapping backends required rewriting all lab code.',
+    code: `<span class="cm"># ORIGINAL config.py — broken</span>
+<span class="kw">def</span> <span class="fn">get_client</span>():
+    <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+        <span class="kw">return</span> openai.<span class="fn">OpenAI</span>(base_url=OLLAMA_BASE_URL)
+    <span class="kw">return</span> anthropic.<span class="fn">Anthropic</span>(api_key=os.<span class="fn">getenv</span>(...))
+
+<span class="cm"># Lab code using the broken version:</span>
+client = <span class="fn">get_client</span>()
+resp = client.chat.completions.<span class="fn">create</span>(...)  <span class="cm"># works locally</span>
+resp = client.<span class="co">messages</span>.<span class="fn">create</span>(...)         <span class="cm"># Anthropic interface</span>
+<span class="cm"># ↑ Lab code breaks when you switch to prod</span>`,
+    rules: [
+      'Returning a raw client exposes the backend interface to all consumers',
+      'OpenAI SDK: .chat.completions.create() — Anthropic SDK: .messages.create()',
+      'Any lab code written against one interface breaks when the other backend is used',
+      'This is the exact problem the _Response wrapper and make_call() solve'
+    ],
+    owners: []
+  },
+
+  bug_after: {
+    tag: 'Week 1 bug fix · after',
+    title: 'After — correct abstraction',
+    subtitle: 'config.py returns _Response — consumer never branches',
+    color: 'var(--green)',
+    desc: 'The fix: wrap both backends behind make_call() which returns _Response. Lab code reads resp.content[0].text regardless of which backend ran. Switching from local to prod is ENVIRONMENT=gcp — zero code changes in lab files. This is the architectural pattern that holds for all 8 weeks.',
+    code: `<span class="cm"># FIXED config.py</span>
+<span class="kw">def</span> <span class="fn">make_call</span>(system_prompt, user_message,
+             temperature, max_tokens=<span class="co">512</span>) -> <span class="co">_Response</span>:
+    <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+        <span class="kw">return</span> <span class="fn">_call_ollama</span>(...)
+    <span class="kw">return</span> <span class="fn">_call_anthropic</span>(...)
+
+<span class="cm"># Lab code — works with both backends:</span>
+resp = <span class="fn">make_call</span>(system, user_msg, temp)
+text       = resp.content[<span class="co">0</span>].text      <span class="cm"># always works</span>
+in_tokens  = resp.usage.input_tokens   <span class="cm"># always works</span>
+out_tokens = resp.usage.output_tokens  <span class="cm"># always works</span>
+
+<span class="cm"># Swap backend:</span>
+<span class="co">ENVIRONMENT=gcp</span> uv run python lab1_first_calls.py`,
+    rules: [
+      'make_call() is the only external interface — _call_ollama() and _call_anthropic() are private',
+      'Consumer code (lab files, harness, application) is completely model-agnostic',
+      'This pattern is what makes ENVIRONMENT=gcp a zero-code-change swap',
+      'Alex: this is the architectural lesson of Week 1 — abstractions prevent rewriting everything'
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Abstraction = no rewriting lab code to switch backends' }]
+  }
+};
+
+let activeId = null;
+
+function select(id) {
+  if (!DATA[id]) return;
+  document.querySelectorAll('.node, .user-node').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(n => n.classList.add('active'));
+  activeId = id;
+
+  const d = DATA[id];
+  document.getElementById('detail-placeholder').style.display = 'none';
+  const content = document.getElementById('detail-content');
+  content.style.display = 'block';
+
+  let ownersHtml = '';
+  if (d.owners && d.owners.length > 0) {
+    ownersHtml = `<div class="detail-section">
+      <div class="detail-section-label">Team sign-off</div>
+      <ul class="detail-rules">
+        ${d.owners.map(o => `<li><span class="owner-tag ${o.cls}">${o.label}</span>${o.note}</li>`).join('')}
+      </ul>
+    </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-tag">${d.tag}</div>
+      <div class="detail-title" style="color:${d.color}">${d.title}</div>
+      <div class="detail-subtitle">${d.subtitle}</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-label">What it does</div>
+        <div class="detail-desc">${d.desc}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Code / config</div>
+        <div class="detail-code">${d.code}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Rules &amp; gotchas</div>
+        <ul class="detail-rules">
+          ${d.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+      ${ownersHtml}
+    </div>`;
+}
+</script>
+</body>
+</html>
