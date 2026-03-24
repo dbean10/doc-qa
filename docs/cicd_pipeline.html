@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CI/CD Pipeline — dbean10/doc-qa</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a4010;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --red:       #f05060;
+    --red-bg:    #2a0f10;
+    --red-bd:    #5a2020;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  .header {
+    max-width: 960px;
+    margin: 0 auto 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 500;
+    color: #e8f0ff;
+    letter-spacing: -0.02em;
+  }
+  .header h1 span { color: var(--teal); }
+  .header-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 300;
+  }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 10px;
+    vertical-align: middle;
+    background: #1a2540;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Pipeline panel ── */
+  .pipeline-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+
+  /* ── Workflow header ── */
+  .workflow-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: var(--bg3);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .workflow-header:hover { border-color: var(--border2); }
+  .workflow-header.active { border-color: var(--teal); background: #0f2822; }
+  .workflow-file {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--teal);
+    font-weight: 600;
+  }
+  .workflow-trigger {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+  }
+  .workflow-trigger.pr { border-color: var(--purple-bd); color: var(--purple); background: var(--purple-bg); }
+  .workflow-trigger.push { border-color: var(--teal-bd); color: var(--teal); background: var(--teal-bg); }
+
+  /* ── Section label ── */
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: 16px 0 8px;
+    padding-left: 2px;
+  }
+
+  /* ── Step node ── */
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    margin-bottom: 6px;
+    position: relative;
+  }
+  .step:hover { transform: translateX(2px); }
+  .step.active { transform: translateX(2px); }
+
+  .step-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-body { flex: 1; min-width: 0; }
+  .step-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .step-sub {
+    font-size: 11px;
+    font-weight: 300;
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+  .step-gate {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    align-self: center;
+  }
+
+  /* color variants */
+  .step-gray { background: var(--gray-bg); border-color: var(--gray-bd); }
+  .step-gray .step-name { color: var(--gray); }
+  .step-gray .step-num { background: var(--gray-bd); color: var(--gray); }
+  .step-gray:hover, .step-gray.active { border-color: var(--gray); background: #1e2a38; }
+
+  .step-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .step-purple .step-name { color: var(--purple); }
+  .step-purple .step-num { background: var(--purple-bd); color: var(--purple); }
+  .step-purple:hover, .step-purple.active { border-color: var(--purple); background: #251f48; }
+
+  .step-teal { background: var(--teal-bg); border-color: var(--teal-bd); }
+  .step-teal .step-name { color: var(--teal); }
+  .step-teal .step-num { background: var(--teal-bd); color: var(--teal); }
+  .step-teal:hover, .step-teal.active { border-color: var(--teal); background: #132e25; }
+
+  .step-amber { background: var(--amber-bg); border-color: var(--amber-bd); }
+  .step-amber .step-name { color: var(--amber); }
+  .step-amber .step-num { background: var(--amber-bd); color: var(--amber); }
+  .step-amber:hover, .step-amber.active { border-color: var(--amber); background: #2e2010; }
+
+  .step-green { background: var(--green-bg); border-color: var(--green-bd); }
+  .step-green .step-name { color: var(--green); }
+  .step-green .step-num { background: var(--green-bd); color: var(--green); }
+  .step-green:hover, .step-green.active { border-color: var(--green); background: #142e1e; }
+
+  .step-coral { background: var(--coral-bg); border-color: var(--coral-bd); }
+  .step-coral .step-name { color: var(--coral); }
+  .step-coral .step-num { background: var(--coral-bd); color: var(--coral); }
+  .step-coral:hover, .step-coral.active { border-color: var(--coral); background: #321a10; }
+
+  .step-red { background: var(--red-bg); border-color: var(--red-bd); }
+  .step-red .step-name { color: var(--red); }
+  .step-red .step-num { background: var(--red-bd); color: var(--red); }
+  .step-red:hover, .step-red.active { border-color: var(--red); background: #2e1015; }
+
+  /* connector between steps */
+  .step-connector {
+    width: 1px;
+    height: 14px;
+    background: var(--border2);
+    margin: 0 0 0 23px;
+    position: relative;
+  }
+  .step-connector::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: -3px;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+
+  /* workflow divider */
+  .workflow-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 24px 0;
+  }
+
+  /* branch protection box */
+  .protection-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .protection-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .protection-item:hover { border-color: var(--border2); }
+  .protection-item.active { border-color: var(--amber); background: var(--amber-bg); }
+  .protection-item-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--amber);
+    font-weight: 600;
+  }
+  .protection-item-sub {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 2px;
+  }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    position: sticky;
+    top: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 400px;
+  }
+  .detail-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .detail-title {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8f0ff;
+  }
+  .detail-subtitle {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 300;
+    margin-top: 4px;
+  }
+  .detail-body { padding: 18px 20px; animation: fadeIn 0.18s ease; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+  .detail-desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+    font-weight: 300;
+  }
+  .detail-code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #a8c0e0;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .detail-code .kw { color: var(--purple); }
+  .detail-code .fn { color: var(--teal); }
+  .detail-code .st { color: var(--amber); }
+  .detail-code .cm { color: var(--text3); }
+  .detail-code .co { color: var(--coral); }
+  .detail-code .gr { color: var(--green); }
+  .detail-rules { list-style: none; }
+  .detail-rules li {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 300;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    line-height: 1.5;
+  }
+  .detail-rules li:last-child { border-bottom: none; }
+  .detail-rules li::before { content: '→'; color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 11px; }
+  .owner-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .owner-morgan { background: #2a1010; color: #f07070; border: 1px solid #5a2020; }
+  .owner-jordan { background: #102a10; color: #70d070; border: 1px solid #205a20; }
+  .owner-alex   { background: #10102a; color: #7070f0; border: 1px solid #20205a; }
+  .detail-placeholder {
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .detail-placeholder .icon { font-size: 32px; margin-bottom: 16px; opacity: 0.3; }
+  .detail-placeholder p { font-size: 13px; color: var(--text3); font-weight: 300; line-height: 1.6; }
+
+  /* legend */
+  .legend {
+    max-width: 960px;
+    margin: 32px auto 0;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-meta">AI-First Bootcamp · CI/CD Reference · All Weeks</div>
+  <h1>CI/CD <span>Pipeline</span>
+    <span class="badge">click any step</span>
+  </h1>
+  <div class="header-sub">.github/workflows/ · dbean10/doc-qa · Branch protection enforced</div>
+</div>
+
+<div class="main">
+
+  <div class="pipeline-panel">
+
+    <!-- ── ci.yml ── -->
+    <div class="workflow-header" data-id="ci_file" onclick="select('ci_file')">
+      <div class="workflow-file">.github/workflows/ci.yml</div>
+      <div class="workflow-trigger pr">on: pull_request → main</div>
+    </div>
+
+    <div class="section-label">setup</div>
+
+    <div class="step step-gray" data-id="ci_checkout" onclick="select('ci_checkout')">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-name">checkout</div>
+        <div class="step-sub">actions/checkout@v4</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-gray" data-id="ci_python" onclick="select('ci_python')">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-name">Python setup</div>
+        <div class="step-sub">actions/setup-python@v5 · Python 3.11</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-gray" data-id="ci_uv" onclick="select('ci_uv')">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-name">install uv</div>
+        <div class="step-sub">curl install script · appends to GITHUB_PATH</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-gray" data-id="ci_deps" onclick="select('ci_deps')">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-name">install deps</div>
+        <div class="step-sub">uv sync · installs from uv.lock</div>
+      </div>
+    </div>
+
+    <div class="section-label">quality gates</div>
+
+    <div class="step step-purple" data-id="ci_lint" onclick="select('ci_lint')">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-name">lint</div>
+        <div class="step-sub">uv run ruff check .</div>
+      </div>
+      <div class="step-gate" style="background:var(--purple-bg);color:var(--purple);border:1px solid var(--purple-bd)">GATE</div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-teal" data-id="ci_tests" onclick="select('ci_tests')">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-name">unit tests</div>
+        <div class="step-sub">pytest -m "not integration and not eval"</div>
+      </div>
+      <div class="step-gate" style="background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-bd)">GATE</div>
+    </div>
+
+    <div class="section-label">outcome</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+      <div class="step step-green" data-id="ci_pass" onclick="select('ci_pass')" style="margin-bottom:0">
+        <div class="step-num">✓</div>
+        <div class="step-body">
+          <div class="step-name">PR mergeable</div>
+          <div class="step-sub">all gates green</div>
+        </div>
+      </div>
+      <div class="step step-red" data-id="ci_fail" onclick="select('ci_fail')" style="margin-bottom:0">
+        <div class="step-num">✗</div>
+        <div class="step-body">
+          <div class="step-name">PR blocked</div>
+          <div class="step-sub">fix + re-push</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="workflow-divider"></div>
+
+    <!-- ── deploy.yml ── -->
+    <div class="workflow-header" data-id="deploy_file" onclick="select('deploy_file')">
+      <div class="workflow-file">.github/workflows/deploy.yml</div>
+      <div class="workflow-trigger push">on: push → main</div>
+    </div>
+
+    <div class="section-label">auth</div>
+
+    <div class="step step-amber" data-id="deploy_wif" onclick="select('deploy_wif')">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-name">GCP auth (WIF)</div>
+        <div class="step-sub">Workload Identity Federation · no stored keys</div>
+      </div>
+      <div class="step-gate" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)">MORGAN</div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-gray" data-id="deploy_gcloud" onclick="select('deploy_gcloud')">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-name">gcloud setup</div>
+        <div class="step-sub">google-github-actions/setup-gcloud@v2</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-gray" data-id="deploy_docker_auth" onclick="select('deploy_docker_auth')">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-name">Docker auth</div>
+        <div class="step-sub">configure for Artifact Registry</div>
+      </div>
+    </div>
+
+    <div class="section-label">build & deploy</div>
+
+    <div class="step step-coral" data-id="deploy_build" onclick="select('deploy_build')">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-name">build + push image</div>
+        <div class="step-sub">docker build · docker push · tagged with git SHA</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-coral" data-id="deploy_run" onclick="select('deploy_run')">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-name">deploy to Cloud Run</div>
+        <div class="step-sub">gcloud run deploy · pulls from Artifact Registry</div>
+      </div>
+    </div>
+    <div class="step-connector"></div>
+
+    <div class="step step-teal" data-id="deploy_smoke" onclick="select('deploy_smoke')">
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <div class="step-name">smoke test</div>
+        <div class="step-sub">curl -f $URL/health → must return 200</div>
+      </div>
+      <div class="step-gate" style="background:var(--teal-bg);color:var(--teal);border:1px solid var(--teal-bd)">GATE</div>
+    </div>
+
+    <div class="workflow-divider"></div>
+
+    <!-- ── Branch protection ── -->
+    <div class="section-label">branch protection — main</div>
+    <div class="protection-row">
+      <div class="protection-item" data-id="bp_pr" onclick="select('bp_pr')">
+        <div class="protection-item-name">require PR</div>
+        <div class="protection-item-sub">no direct push to main</div>
+      </div>
+      <div class="protection-item" data-id="bp_status" onclick="select('bp_status')">
+        <div class="protection-item-name">required check: test</div>
+        <div class="protection-item-sub">CI must pass before merge</div>
+      </div>
+      <div class="protection-item" data-id="bp_strict" onclick="select('bp_strict')">
+        <div class="protection-item-name">strict checks</div>
+        <div class="protection-item-sub">branch must be up to date</div>
+      </div>
+      <div class="protection-item" data-id="bp_admin" onclick="select('bp_admin')">
+        <div class="protection-item-name">no bypass — admins included</div>
+        <div class="protection-item-sub">GH006 enforced for everyone</div>
+      </div>
+    </div>
+
+    <div class="workflow-divider"></div>
+
+    <!-- ── Developer workflow ── -->
+    <div class="section-label">developer workflow — every lab</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+      <div class="step step-gray" data-id="dev_branch" onclick="select('dev_branch')" style="margin-bottom:0;flex-direction:column;align-items:center;text-align:center;padding:10px 8px">
+        <div class="step-num" style="margin-bottom:4px;margin-top:0">1</div>
+        <div class="step-name" style="font-size:11px">branch</div>
+        <div class="step-sub">git checkout -b</div>
+      </div>
+      <div class="step step-purple" data-id="dev_work" onclick="select('dev_work')" style="margin-bottom:0;flex-direction:column;align-items:center;text-align:center;padding:10px 8px">
+        <div class="step-num" style="margin-bottom:4px;margin-top:0">2</div>
+        <div class="step-name" style="font-size:11px">work</div>
+        <div class="step-sub">code + commit</div>
+      </div>
+      <div class="step step-purple" data-id="dev_local" onclick="select('dev_local')" style="margin-bottom:0;flex-direction:column;align-items:center;text-align:center;padding:10px 8px">
+        <div class="step-num" style="margin-bottom:4px;margin-top:0">3</div>
+        <div class="step-name" style="font-size:11px">verify local</div>
+        <div class="step-sub">ruff + pytest</div>
+      </div>
+      <div class="step step-teal" data-id="dev_pr" onclick="select('dev_pr')" style="margin-bottom:0;flex-direction:column;align-items:center;text-align:center;padding:10px 8px">
+        <div class="step-num" style="margin-bottom:4px;margin-top:0">4</div>
+        <div class="step-name" style="font-size:11px">PR + CI</div>
+        <div class="step-sub">gh pr create</div>
+      </div>
+      <div class="step step-green" data-id="dev_merge" onclick="select('dev_merge')" style="margin-bottom:0;flex-direction:column;align-items:center;text-align:center;padding:10px 8px">
+        <div class="step-num" style="margin-bottom:4px;margin-top:0">5</div>
+        <div class="step-name" style="font-size:11px">merge</div>
+        <div class="step-sub">--squash</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Detail panel ── -->
+  <div class="detail-panel">
+    <div class="detail-placeholder" id="detail-placeholder">
+      <div class="icon">⬡</div>
+      <p>Click any step, gate, or protection rule to see details, the exact command or config, and who owns it.</p>
+    </div>
+    <div id="detail-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--gray-bg);border:1px solid var(--gray-bd)"></div>Setup</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple-bg);border:1px solid var(--purple-bd)"></div>Lint gate</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--teal-bg);border:1px solid var(--teal-bd)"></div>Test gate</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber-bg);border:1px solid var(--amber-bd)"></div>Security</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--coral-bg);border:1px solid var(--coral-bd)"></div>Build & deploy</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--green-bg);border:1px solid var(--green-bd)"></div>Pass</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--red-bg);border:1px solid var(--red-bd)"></div>Fail</div>
+  <div class="legend-item" style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3)">dbean10/doc-qa · .github/workflows/</div>
+</div>
+
+<script>
+const DATA = {
+  ci_file: {
+    tag: 'Workflow file',
+    title: 'ci.yml',
+    subtitle: 'Runs on every pull request to main',
+    color: 'var(--teal)',
+    desc: 'The CI workflow is the first gate every change must pass. It runs on every pull request — not on push to main. Purpose: catch lint errors and unit test failures before they reach main. No API calls are made — all tests are marked "not integration and not eval".',
+    code: `<span class="cm"># .github/workflows/ci.yml</span>
+<span class="kw">name</span>: <span class="st">CI</span>
+<span class="kw">on</span>:
+  <span class="kw">pull_request</span>:
+    <span class="kw">branches</span>: [<span class="st">main</span>]
+
+<span class="kw">jobs</span>:
+  <span class="kw">test</span>:
+    <span class="kw">runs-on</span>: <span class="st">ubuntu-latest</span>
+    <span class="kw">steps</span>:
+      <span class="cm"># checkout → python → uv → deps → lint → test</span>`,
+    rules: [
+      'Triggered on pull_request to main — not on push',
+      'Job name is "test" — this is the required status check name in branch protection',
+      'No secrets needed — no API calls, no GCP access',
+      'Must pass before merge is allowed — this is Jordan\'s gate'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Quality gate — required to merge' }]
+  },
+
+  ci_checkout: {
+    tag: 'ci.yml · step 1',
+    title: 'checkout',
+    subtitle: 'actions/checkout@v4',
+    color: 'var(--gray)',
+    desc: 'Checks out the repository at the commit that triggered the PR. Without this, none of the other steps can see any files.',
+    code: `- <span class="kw">name</span>: <span class="st">Checkout</span>
+  <span class="kw">uses</span>: <span class="st">actions/checkout@v4</span>`,
+    rules: [
+      'Always the first step — every other step depends on having the code present',
+      'Checks out the PR branch, not main'
+    ],
+    owners: []
+  },
+
+  ci_python: {
+    tag: 'ci.yml · step 2',
+    title: 'Python setup',
+    subtitle: 'actions/setup-python@v5 · Python 3.11',
+    color: 'var(--gray)',
+    desc: 'Installs Python 3.11 on the runner. Note: CI runs Python 3.11.15, local dev runs 3.11.9 — close enough that behaviour is identical in practice.',
+    code: `- <span class="kw">name</span>: <span class="st">Set up Python</span>
+  <span class="kw">uses</span>: <span class="st">actions/setup-python@v5</span>
+  <span class="kw">with</span>:
+    <span class="kw">python-version</span>: <span class="st">'3.11'</span>`,
+    rules: [
+      'CI uses Python 3.11.15, local dev uses 3.11.9 — minor version difference, behaviour identical',
+      'If you ever pin to a specific patch version (3.11.9) in CI, update this when you upgrade locally'
+    ],
+    owners: []
+  },
+
+  ci_uv: {
+    tag: 'ci.yml · step 3',
+    title: 'install uv',
+    subtitle: 'curl install script · appends to GITHUB_PATH',
+    color: 'var(--gray)',
+    desc: 'Installs the uv package manager. Must be added to GITHUB_PATH so subsequent steps can call "uv" directly.',
+    code: `- <span class="kw">name</span>: <span class="st">Install uv</span>
+  <span class="kw">run</span>: |
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    echo "$HOME/.cargo/bin" >> $GITHUB_PATH`,
+    rules: [
+      'Must append to GITHUB_PATH — without it, "uv" is not found in subsequent steps',
+      'uv generates uv.lock — reproducible installs across local and CI'
+    ],
+    owners: []
+  },
+
+  ci_deps: {
+    tag: 'ci.yml · step 4',
+    title: 'install deps',
+    subtitle: 'uv sync · installs from uv.lock',
+    color: 'var(--gray)',
+    desc: 'Installs all dependencies from uv.lock. The lockfile ensures CI gets exactly the same package versions as local dev — no version drift.',
+    code: `- <span class="kw">name</span>: <span class="st">Install dependencies</span>
+  <span class="kw">run</span>: <span class="st">uv sync</span>
+
+<span class="cm"># uv.lock is committed to git</span>
+<span class="cm"># Every environment gets identical versions</span>`,
+    rules: [
+      'uv.lock is committed — never edit manually',
+      'Add new packages with "uv add <pkg>", not pip install',
+      'If uv.lock is stale, uv sync will fail — update with "uv lock"'
+    ],
+    owners: []
+  },
+
+  ci_lint: {
+    tag: 'ci.yml · step 5 · GATE',
+    title: 'lint',
+    subtitle: 'uv run ruff check . — blocks merge on failure',
+    color: 'var(--purple)',
+    desc: 'Runs ruff across the entire codebase. Any ruff error blocks the PR from merging. This week caught two issues: unused Generator import (E402) and unused field import (F401). Run locally before every commit.',
+    code: `- <span class="kw">name</span>: <span class="st">Lint</span>
+  <span class="kw">run</span>: <span class="st">uv run ruff check .</span>
+
+<span class="cm"># Run locally before committing:</span>
+uv run ruff check .          <span class="cm"># check</span>
+uv run ruff check . --fix    <span class="cm"># auto-fix</span>
+
+<span class="cm"># Week 3 failures caught by this gate:</span>
+<span class="cm"># E402 — Generator import not at top of file</span>
+<span class="cm"># F401 — field imported but unused</span>`,
+    rules: [
+      'Run "uv run ruff check ." before every commit — not just before pushing',
+      'Most errors are auto-fixable with --fix',
+      'E402: module-level imports must be at top of file',
+      'F401: remove unused imports immediately — they are noise',
+      'F541: f-string with no placeholders — remove the f prefix'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Lint is step 1 of quality gate' }]
+  },
+
+  ci_tests: {
+    tag: 'ci.yml · step 6 · GATE',
+    title: 'unit tests',
+    subtitle: 'pytest -m "not integration and not eval" — no API calls',
+    color: 'var(--teal)',
+    desc: 'Runs all unit tests — tests NOT marked "integration" or "eval". This is the marker pattern that separates fast, no-API tests from slow, expensive ones. Integration and eval tests require real API keys and run separately. This week caught a breaking change: test_config.py was importing names from the old config.py interface that no longer existed after the Week 1 rewrite.',
+    code: `- <span class="kw">name</span>: <span class="st">Unit tests</span>
+  <span class="kw">run</span>: <span class="st">uv run pytest -m "not integration and not eval" --tb=short</span>
+
+<span class="cm"># Marker pattern in pyproject.toml:</span>
+<span class="cm"># [tool.pytest.ini_options]</span>
+<span class="cm"># markers = ["integration", "eval"]</span>
+
+<span class="cm"># Run locally before committing:</span>
+uv run pytest -m <span class="st">"not integration and not eval"</span>`,
+    rules: [
+      'No API keys available in CI — unit tests must never call real APIs',
+      'Mark any test that touches Ollama or Anthropic as @pytest.mark.integration',
+      'Mark any test that runs an eval harness as @pytest.mark.eval',
+      'The test_config.py breakage this week is the canonical example: update tests when you change an interface'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Test suite is the quality contract' }]
+  },
+
+  ci_pass: {
+    tag: 'ci.yml · outcome',
+    title: 'PR mergeable',
+    subtitle: 'All gates green — merge allowed',
+    color: 'var(--green)',
+    desc: 'When both lint and unit tests pass, the "test" status check shows green on the PR. Branch protection requires this check before allowing the merge button.',
+    code: `<span class="gr">✓ CI/test (pull_request)  10s</span>
+
+<span class="cm"># Merge with squash to keep main history clean</span>
+gh pr merge &lt;number&gt; --squash --delete-branch
+
+<span class="cm"># Sync local main after merge</span>
+git checkout main
+git fetch origin
+git reset --hard origin/main`,
+    rules: [
+      'Always squash merge — keeps main history one commit per feature',
+      'Always delete the branch after merge — no stale branches',
+      'Always sync local main after merge — local will be ahead of remote otherwise'
+    ],
+    owners: []
+  },
+
+  ci_fail: {
+    tag: 'ci.yml · outcome',
+    title: 'PR blocked',
+    subtitle: 'Fix the failure and re-push to the same branch',
+    color: 'var(--red)',
+    desc: 'When CI fails, the PR is blocked from merging. The fix is always: diagnose the failure with "gh run view --log-failed <run-id>", fix locally, commit, and push to the same branch. CI re-triggers automatically.',
+    code: `<span class="cm"># Get the failure details</span>
+gh run view --log-failed &lt;run-id&gt;
+
+<span class="cm"># Fix locally, then:</span>
+git add &lt;files&gt;
+git commit -m <span class="st">"fix: ..."</span>
+git push origin &lt;branch&gt;
+
+<span class="cm"># CI re-triggers on every push to the branch</span>
+gh pr checks &lt;number&gt; --watch`,
+    rules: [
+      'Never push --force to fix a CI failure — commit the fix properly',
+      'Read the full log with --log-failed before guessing at the cause',
+      'Two classes of failure: lint (ruff) and test (pytest) — each has a different fix pattern'
+    ],
+    owners: []
+  },
+
+  deploy_file: {
+    tag: 'Workflow file',
+    title: 'deploy.yml',
+    subtitle: 'Runs on every push (merge) to main',
+    color: 'var(--teal)',
+    desc: 'The deploy workflow runs automatically every time a commit lands on main — which only happens via a merged PR. It authenticates to GCP, builds a Docker image tagged with the git SHA, pushes to Artifact Registry, deploys to Cloud Run, and verifies the deployment with a smoke test.',
+    code: `<span class="cm"># .github/workflows/deploy.yml</span>
+<span class="kw">name</span>: <span class="st">Deploy</span>
+<span class="kw">on</span>:
+  <span class="kw">push</span>:
+    <span class="kw">branches</span>: [<span class="st">main</span>]
+
+<span class="kw">jobs</span>:
+  <span class="kw">deploy</span>:
+    <span class="kw">runs-on</span>: <span class="st">ubuntu-latest</span>
+    <span class="cm"># auth → gcloud → docker → build → deploy → smoke</span>`,
+    rules: [
+      'Triggered on push to main — only possible after a merged PR',
+      'Every deploy is a unique, traceable image tagged with git SHA',
+      'Smoke test failure rolls back via Cloud Run — previous revision stays live'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Architecture sign-off' },
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Smoke test is the production quality gate' }
+    ]
+  },
+
+  deploy_wif: {
+    tag: 'deploy.yml · step 1 · SECURITY',
+    title: 'GCP auth (WIF)',
+    subtitle: 'Workload Identity Federation · no stored keys anywhere',
+    color: 'var(--amber)',
+    desc: 'GitHub Actions authenticates to GCP using short-lived OIDC tokens via Workload Identity Federation. No service account keys are stored in GitHub secrets or anywhere else. Tokens are valid for minutes only — there is nothing to rotate, leak, or accidentally commit.',
+    code: `- <span class="kw">name</span>: <span class="st">Authenticate to GCP</span>
+  <span class="kw">uses</span>: <span class="st">google-github-actions/auth@v2</span>
+  <span class="kw">with</span>:
+    <span class="kw">workload_identity_provider</span>: <span class="st">${'$'}{{ secrets.WIF_PROVIDER }}</span>
+    <span class="kw">service_account</span>: <span class="st">${'$'}{{ secrets.WIF_SERVICE_ACCOUNT }}</span>
+
+<span class="cm"># WIF pool: github-pool</span>
+<span class="cm"># Provider: github-provider (OIDC)</span>
+<span class="cm"># Condition: repo == dbean10/doc-qa only</span>
+<span class="cm"># Token lifetime: minutes</span>`,
+    rules: [
+      'No service account keys stored anywhere — WIF only',
+      'Attribute condition restricts to dbean10/doc-qa — no other repo can impersonate',
+      'WIF_PROVIDER and WIF_SERVICE_ACCOUNT are the only GitHub secrets needed',
+      'Morgan: git log --all -p | grep -i api_key before every submission'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Security architecture — no stored keys' }]
+  },
+
+  deploy_gcloud: {
+    tag: 'deploy.yml · step 2',
+    title: 'gcloud setup',
+    subtitle: 'google-github-actions/setup-gcloud@v2',
+    color: 'var(--gray)',
+    desc: 'Sets up the gcloud CLI on the runner using the credentials from the WIF authentication step.',
+    code: `- <span class="kw">name</span>: <span class="st">Set up gcloud</span>
+  <span class="kw">uses</span>: <span class="st">google-github-actions/setup-gcloud@v2</span>
+
+<span class="cm"># Project: doc-qa-learn</span>
+<span class="cm"># Region: us-central1</span>`,
+    rules: [
+      'Depends on the WIF auth step completing successfully',
+      'Gives access to Cloud Run, Artifact Registry, Secret Manager'
+    ],
+    owners: []
+  },
+
+  deploy_docker_auth: {
+    tag: 'deploy.yml · step 3',
+    title: 'Docker auth',
+    subtitle: 'Configure Docker for Artifact Registry',
+    color: 'var(--gray)',
+    desc: 'Configures Docker to authenticate against GCP Artifact Registry so the build and push steps work.',
+    code: `- <span class="kw">name</span>: <span class="st">Configure Docker</span>
+  <span class="kw">run</span>: |
+    gcloud auth configure-docker \\
+      us-central1-docker.pkg.dev
+
+<span class="cm"># Registry: us-central1-docker.pkg.dev</span>
+<span class="cm"># Repo: doc-qa-images</span>`,
+    rules: [
+      'Must run after gcloud setup — uses the authenticated gcloud session',
+      'Scoped to us-central1 Artifact Registry only'
+    ],
+    owners: []
+  },
+
+  deploy_build: {
+    tag: 'deploy.yml · step 4',
+    title: 'build + push image',
+    subtitle: 'docker build · docker push · tagged with git SHA',
+    color: 'var(--coral)',
+    desc: 'Builds the Docker image from the Dockerfile at the repo root and pushes it to Artifact Registry. The image is tagged with the git SHA so every deploy is uniquely traceable back to an exact commit.',
+    code: `- <span class="kw">name</span>: <span class="st">Build and push</span>
+  <span class="kw">run</span>: |
+    IMAGE=us-central1-docker.pkg.dev/\\
+      doc-qa-learn/doc-qa-images/doc-qa-api
+
+    docker build -t $IMAGE:<span class="st">${'$'}{{ github.sha }}</span> .
+    docker push $IMAGE:<span class="st">${'$'}{{ github.sha }}</span>
+
+<span class="cm"># Base image: python:3.11-slim (arm64v8)</span>
+<span class="cm"># Non-root user: appuser (Morgan requirement)</span>`,
+    rules: [
+      'Tagged with github.sha — every image is unique and traceable',
+      'Base image is python:3.11-slim for minimal attack surface',
+      'Non-root appuser required by Morgan — never run containers as root',
+      'Current registry size: ~162MB'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Non-root container required' }]
+  },
+
+  deploy_run: {
+    tag: 'deploy.yml · step 5',
+    title: 'deploy to Cloud Run',
+    subtitle: 'gcloud run deploy · pulls image from Artifact Registry',
+    color: 'var(--coral)',
+    desc: 'Deploys the new image to Cloud Run. Cloud Run is fully serverless — scales to zero when idle, costs nothing at rest. API keys are injected from Secret Manager at runtime, never in the image or environment variables.',
+    code: `- <span class="kw">name</span>: <span class="st">Deploy to Cloud Run</span>
+  <span class="kw">run</span>: |
+    gcloud run deploy doc-qa-api \\
+      --image $IMAGE:<span class="st">${'$'}{{ github.sha }}</span> \\
+      --region us-central1 \\
+      --platform managed
+
+<span class="cm"># Service: doc-qa-api</span>
+<span class="cm"># Memory: 512Mi · CPU: 1 vCPU</span>
+<span class="cm"># Min instances: 0 (scales to zero)</span>
+<span class="cm"># Secrets injected from Secret Manager at runtime</span>`,
+    rules: [
+      'API keys come from Secret Manager at runtime — never baked into the image',
+      'Min instances: 0 — scales to zero, costs nothing at rest',
+      'Authentication: --no-allow-unauthenticated — not public',
+      'Previous revision stays live until smoke test passes'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Infrastructure as code via Pulumi' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Secrets from Secret Manager only' }
+    ]
+  },
+
+  deploy_smoke: {
+    tag: 'deploy.yml · step 6 · GATE',
+    title: 'smoke test',
+    subtitle: 'curl -f $URL/health → must return 200',
+    color: 'var(--teal)',
+    desc: 'The smoke test is the production quality gate. After deploying, it hits the /health endpoint on the live Cloud Run service. If it returns anything other than 200, the workflow fails and Cloud Run keeps the previous revision live. Jordan calls this "your first eval" — trivial now but the pattern that scales to complex behavioral tests.',
+    code: `- <span class="kw">name</span>: <span class="st">Smoke test</span>
+  <span class="kw">run</span>: |
+    URL=$(gcloud run services describe doc-qa-api \\
+      --region us-central1 \\
+      --format "value(status.url)")
+    curl -f $URL/health
+
+<span class="cm"># curl -f fails with exit code 22 on non-2xx</span>
+<span class="cm"># This causes the workflow step to fail</span>
+<span class="cm"># Cloud Run: previous revision stays live</span>`,
+    rules: [
+      'curl -f returns exit code 22 on non-2xx — the step fails, workflow fails',
+      'Cloud Run keeps the previous revision live on failure — zero downtime rollback',
+      'Jordan: this is your first eval. The pattern here scales to LLM behavioral tests in Week 8',
+      'If smoke test fails: check Cloud Run logs, fix, push a new commit, redeploy'
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Smoke test = production quality gate' },
+      { label: 'Alex', cls: 'owner-alex', note: 'Must pass before deploy considered complete' }
+    ]
+  },
+
+  bp_pr: {
+    tag: 'Branch protection · main',
+    title: 'require pull request',
+    subtitle: 'No direct push to main — ever',
+    color: 'var(--amber)',
+    desc: 'All changes to main must go through a pull request. Direct pushes are rejected with GH006. This was discovered the hard way when the .gitignore housekeeping commit pushed directly and GitHub allowed it — because admin bypass was not yet disabled.',
+    code: `<span class="cm"># GitHub: Settings → Branches → main</span>
+<span class="cm"># ✓ Require a pull request before merging</span>
+
+<span class="cm"># What happens without this:</span>
+git push origin main
+<span class="cm"># remote: Bypassed rule violations for refs/heads/main</span>
+<span class="cm"># (silent bypass — dangerous)</span>
+
+<span class="cm"># What happens with this + no admin bypass:</span>
+git push origin main
+<span class="cm"># remote: error: GH006: Protected branch update failed</span>
+<span class="cm"># (hard block — correct)</span>`,
+    rules: [
+      'Discovered Week 3: GitHub allows admin bypass by default — must explicitly disable it',
+      '"Do not allow bypassing the above settings" must be checked',
+      'Even housekeeping commits go through a PR — no exceptions',
+      'The process is the protection'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Admin bypass disabled — enforced for everyone' }]
+  },
+
+  bp_status: {
+    tag: 'Branch protection · main',
+    title: 'required status check: test',
+    subtitle: 'CI job named "test" must pass before merge',
+    color: 'var(--amber)',
+    desc: 'The CI workflow\'s job is named "test". Branch protection requires this specific check to pass before the merge button activates. The job name in ci.yml and the required check name in branch protection must match exactly.',
+    code: `<span class="cm"># In ci.yml — job name must match exactly</span>
+<span class="kw">jobs</span>:
+  <span class="kw">test</span>:           <span class="cm"># ← this name</span>
+    runs-on: ubuntu-latest
+    steps: [...]
+
+<span class="cm"># In GitHub branch protection:</span>
+<span class="cm"># Required status checks: "test"  ← must match</span>
+<span class="cm"># ✓ Require branches to be up to date</span>`,
+    rules: [
+      'Job name "test" in ci.yml must match the required check name exactly',
+      'If you rename the job, update branch protection to match',
+      'Strict checks: branch must be up to date before merge — prevents stale PR merges'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'CI gate is the merge requirement' }]
+  },
+
+  bp_strict: {
+    tag: 'Branch protection · main',
+    title: 'strict checks',
+    subtitle: 'Branch must be up to date before merge',
+    color: 'var(--amber)',
+    desc: 'Strict mode means if main has moved ahead since your PR was last updated, you must rebase or merge main into your branch before you can merge. Prevents a class of bugs where a PR passed CI against an older version of main but would break against the current version.',
+    code: `<span class="cm"># If main has moved ahead of your branch:</span>
+git checkout main
+git pull
+git checkout &lt;your-branch&gt;
+git rebase main    <span class="cm"># or: git merge main</span>
+git push origin &lt;your-branch&gt; --force-with-lease
+
+<span class="cm"># CI re-triggers and must pass again</span>
+<span class="cm"># against the updated branch</span>`,
+    rules: [
+      'Prevents merging a PR that passes CI against a stale version of main',
+      'Prefer rebase over merge for a clean branch history',
+      'Use --force-with-lease, not --force — safer',
+      'CI re-triggers automatically after the force push'
+    ],
+    owners: []
+  },
+
+  bp_admin: {
+    tag: 'Branch protection · main',
+    title: 'no bypass — admins included',
+    subtitle: '"Do not allow bypassing the above settings" — checked',
+    color: 'var(--amber)',
+    desc: 'By default GitHub allows repository admins to bypass branch protection rules. This is a misconfiguration for any serious project. Week 3 discovered this when a direct push to main succeeded silently with a "Bypassed rule violations" warning. The fix: check "Do not allow bypassing the above settings" in branch protection.',
+    code: `<span class="cm"># GitHub: Settings → Branches → main rule</span>
+<span class="cm"># ✓ Do not allow bypassing the above settings</span>
+
+<span class="cm"># Verification test (should fail with GH006):</span>
+echo <span class="st">"# test"</span> >> README.md
+git add README.md
+git commit -m <span class="st">"test: verify branch protection"</span>
+git push origin main
+<span class="cm"># remote: error: GH006: Protected branch update failed ✓</span>
+
+<span class="cm"># Clean up:</span>
+git reset --soft HEAD~1
+git restore --staged README.md
+git restore README.md`,
+    rules: [
+      'Admin bypass is ON by default in GitHub — must explicitly disable it',
+      'Week 3 finding: .gitignore commit pushed directly and was allowed silently',
+      'Test it explicitly: a push to main should return GH006',
+      '"I\'m just pushing a quick fix" is how credentials end up in main history'
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Verified Week 3 — GH006 enforced' }]
+  },
+
+  dev_branch: {
+    tag: 'Developer workflow · step 1',
+    title: 'branch',
+    subtitle: 'git checkout -b lab{N}/description',
+    color: 'var(--gray)',
+    desc: 'Every lab, every feature, every fix starts with a new branch off clean main. Never work directly on main. Branch naming convention: lab{week}/{description}.',
+    code: `<span class="cm"># Always start here</span>
+git checkout main
+git pull                        <span class="cm"># ensure main is clean</span>
+git status                      <span class="cm"># verify nothing uncommitted</span>
+git checkout -b lab3/chatbot    <span class="cm"># create and switch</span>
+
+<span class="cm"># Naming convention:</span>
+<span class="cm"># lab3/chatbot</span>
+<span class="cm"># lab3/journal</span>
+<span class="cm"># lab4/tool-use</span>`,
+    rules: [
+      'Always pull main before branching — never branch off a stale main',
+      'Naming: lab{week}/{short-description}',
+      'One branch per logical unit of work — not one branch per week',
+      'Check git status before branching — never carry uncommitted changes to a new branch'
+    ],
+    owners: []
+  },
+
+  dev_work: {
+    tag: 'Developer workflow · step 2',
+    title: 'work',
+    subtitle: 'code · commit in logical units · descriptive messages',
+    color: 'var(--purple)',
+    desc: 'Commit in logical units — one commit per meaningful change, not one giant commit at the end. Use conventional commit format: feat/fix/test/chore/docs followed by scope and description.',
+    code: `<span class="cm"># Conventional commit format:</span>
+git commit -m <span class="st">"feat(config): add make_stream_call()"</span>
+git commit -m <span class="st">"fix(lint): remove unused field import"</span>
+git commit -m <span class="st">"test(lab3): add summarizer verification tests"</span>
+git commit -m <span class="st">"chore: exclude lab3/results/ from git"</span>
+
+<span class="cm"># Types: feat fix test chore docs refactor</span>
+<span class="cm"># Scope: config lab3 tests ci deploy</span>`,
+    rules: [
+      'Commit messages are a log of decisions — write them for the person reading in 6 months',
+      'Conventional commits: type(scope): description',
+      'One logical change per commit — not one file per commit',
+      'Include team sign-off references in commit bodies for lab work'
+    ],
+    owners: []
+  },
+
+  dev_local: {
+    tag: 'Developer workflow · step 3',
+    title: 'verify local',
+    subtitle: 'ruff + pytest — before every push',
+    color: 'var(--purple)',
+    desc: 'Run both checks locally before pushing. This prevents CI failures that require a fix commit, which adds noise to the PR history. Week 3 had two CI failures that could have been caught locally.',
+    code: `<span class="cm"># Run before every push — not just before creating the PR</span>
+uv run ruff check .
+uv run pytest -m <span class="st">"not integration and not eval"</span>
+
+<span class="cm"># If ruff finds fixable errors:</span>
+uv run ruff check . --fix
+uv run ruff check .   <span class="cm"># verify clean</span>
+
+<span class="cm"># Week 3 failures that could have been caught locally:</span>
+<span class="cm"># 1. Generator import not at top of file (E402)</span>
+<span class="cm"># 2. Unused field import in token_tracker.py (F401)</span>`,
+    rules: [
+      'Make this a habit: ruff + pytest before every push, no exceptions',
+      'Two CI failures this week were both catchable locally',
+      'If pytest finds a failure, fix it before pushing — not after',
+      'Run ruff --fix first, then ruff again to verify clean'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Local verification = fewer CI fix commits' }]
+  },
+
+  dev_pr: {
+    tag: 'Developer workflow · step 4',
+    title: 'PR + CI',
+    subtitle: 'gh pr create · watch CI · fix if needed',
+    color: 'var(--teal)',
+    desc: 'Open the PR with gh pr create and watch CI with gh pr checks --watch. If CI fails, get details with gh run view --log-failed and fix. Never merge with a failing CI.',
+    code: `<span class="cm"># Push branch and create PR</span>
+git push origin &lt;branch&gt;
+gh pr create \\
+  --title <span class="st">"feat: description"</span> \\
+  --body <span class="st">"What, why, sign-offs"</span> \\
+  --base main
+
+<span class="cm"># Watch CI</span>
+gh pr checks &lt;number&gt; --watch
+
+<span class="cm"># If CI fails, get details:</span>
+gh run view --log-failed &lt;run-id&gt;`,
+    rules: [
+      'Include what, why, and team sign-off status in the PR body',
+      'gh pr checks --watch tails CI live — don\'t just refresh GitHub',
+      'gh run view --log-failed is faster than reading the GitHub UI',
+      'Fix commits go on the same branch — CI re-triggers automatically'
+    ],
+    owners: []
+  },
+
+  dev_merge: {
+    tag: 'Developer workflow · step 5',
+    title: 'merge',
+    subtitle: 'squash merge · delete branch · sync local main',
+    color: 'var(--green)',
+    desc: 'Squash merge keeps main history clean — all PR commits become one. Always delete the branch after merging. Always sync local main immediately — local will be ahead of remote if you don\'t.',
+    code: `<span class="cm"># Merge, delete remote branch, sync local</span>
+gh pr merge &lt;number&gt; --squash --delete-branch
+
+git checkout main
+git fetch origin
+git reset --hard origin/main
+
+<span class="cm"># Verify</span>
+git log --oneline -4
+git status   <span class="cm"># should show: nothing to commit</span>`,
+    rules: [
+      '--squash keeps main history one commit per feature — clean and readable',
+      '--delete-branch removes the remote branch automatically',
+      'git reset --hard origin/main aligns local to remote after squash merge',
+      'Never use git pull after a squash merge — the histories have diverged, use reset --hard'
+    ],
+    owners: []
+  }
+};
+
+let activeId = null;
+
+function select(id) {
+  if (!DATA[id]) return;
+
+  document.querySelectorAll('.step, .workflow-header, .protection-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(n => n.classList.add('active'));
+  activeId = id;
+
+  const d = DATA[id];
+  document.getElementById('detail-placeholder').style.display = 'none';
+  const content = document.getElementById('detail-content');
+  content.style.display = 'block';
+
+  let ownersHtml = '';
+  if (d.owners && d.owners.length > 0) {
+    ownersHtml = `
+      <div class="detail-section">
+        <div class="detail-section-label">Team sign-off</div>
+        <ul class="detail-rules">
+          ${d.owners.map(o => `<li><span class="owner-tag ${o.cls}">${o.label}</span>${o.note}</li>`).join('')}
+        </ul>
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-tag">${d.tag}</div>
+      <div class="detail-title" style="color:${d.color}">${d.title}</div>
+      <div class="detail-subtitle">${d.subtitle}</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-label">What it does</div>
+        <div class="detail-desc">${d.desc}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Config / command</div>
+        <div class="detail-code">${d.code}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Rules &amp; gotchas</div>
+        <ul class="detail-rules">
+          ${d.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+      ${ownersHtml}
+    </div>`;
+}
+</script>
+</body>
+</html>
