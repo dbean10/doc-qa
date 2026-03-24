@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 3 — Chatbot Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --green:     #50d080;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 24px 80px;
+  }
+
+  /* ── Header ── */
+  .header {
+    max-width: 960px;
+    margin: 0 auto 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 {
+    font-size: 26px;
+    font-weight: 500;
+    color: #e8f0ff;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .header h1 span { color: var(--purple); }
+  .header-sub {
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--text2);
+    font-weight: 300;
+  }
+  .badge {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-left: 10px;
+    vertical-align: middle;
+  }
+  .badge-click { background: #1a2540; color: var(--text2); border: 1px solid var(--border2); }
+
+  /* ── Layout ── */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Diagram panel ── */
+  .diagram-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+
+  .layer-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding-left: 2px;
+  }
+
+  .layer { margin-bottom: 8px; }
+
+  /* connector lines */
+  .connectors {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 20px;
+    height: 32px;
+    align-items: center;
+    position: relative;
+  }
+  .connector-line {
+    width: 1px;
+    height: 32px;
+    background: var(--border2);
+    position: relative;
+  }
+  .connector-line::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: -3px;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+  .connectors-3 { padding: 0 60px; }
+
+  /* ── Node styles ── */
+  .node {
+    border-radius: 8px;
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    border: 1px solid transparent;
+    position: relative;
+  }
+  .node:hover { transform: translateY(-1px); }
+  .node.active { transform: translateY(-1px); }
+
+  .node-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .node-sub {
+    font-size: 11px;
+    font-weight: 300;
+    margin-top: 2px;
+    opacity: 0.7;
+  }
+
+  /* color variants */
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd);   }
+  .node-gray   .node-title { color: var(--gray); }
+  .node-gray:hover, .node-gray.active   { border-color: var(--gray);   background: #1e2a38; }
+
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .node-purple .node-title { color: var(--purple); }
+  .node-purple:hover, .node-purple.active { border-color: var(--purple); background: #251f48; }
+
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .node-teal   .node-title { color: var(--teal); }
+  .node-teal:hover, .node-teal.active   { border-color: var(--teal);   background: #132e25; }
+
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .node-coral  .node-title { color: var(--coral); }
+  .node-coral:hover, .node-coral.active  { border-color: var(--coral);  background: #321a10; }
+
+  /* container nodes */
+  .container-node {
+    border-radius: 10px;
+    padding: 14px 16px 14px;
+    border: 1px solid;
+  }
+  .container-node .container-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .container-node .inner-grid {
+    display: grid;
+    gap: 8px;
+  }
+  .container-node .inner-grid-2 { grid-template-columns: 1fr 1fr; }
+  .container-node .inner-grid-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+  .container-node .inner-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .cn-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .cn-purple .container-title { color: var(--purple); }
+  .cn-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .cn-teal   .container-title { color: var(--teal); }
+  .cn-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .cn-coral  .container-title { color: var(--coral); }
+
+  /* user node */
+  .user-row { display: flex; justify-content: center; }
+  .user-node {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--gray-bg);
+    border: 1px solid var(--gray-bd);
+    border-radius: 8px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 200px;
+    justify-content: center;
+  }
+  .user-node:hover { border-color: var(--gray); background: #1e2a38; }
+  .user-node .node-title { color: var(--gray); font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  /* model row */
+  .model-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  /* JSONL badge on TokenTracker */
+  .jsonl-tag {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-family: var(--mono);
+    font-size: 9px;
+    background: #1a2a1a;
+    color: var(--green);
+    border: 1px solid #2a4a2a;
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    position: sticky;
+    top: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    min-height: 400px;
+  }
+
+  .detail-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .detail-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .detail-title {
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+    color: #e8f0ff;
+  }
+  .detail-subtitle {
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 300;
+    margin-top: 4px;
+  }
+
+  .detail-body { padding: 18px 20px; }
+
+  .detail-section { margin-bottom: 20px; }
+  .detail-section:last-child { margin-bottom: 0; }
+
+  .detail-section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+  }
+
+  .detail-desc {
+    font-size: 13px;
+    color: var(--text);
+    line-height: 1.65;
+    font-weight: 300;
+  }
+
+  .detail-code {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #a8c0e0;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .detail-code .kw { color: var(--purple); }
+  .detail-code .fn { color: var(--teal); }
+  .detail-code .st { color: var(--amber); }
+  .detail-code .cm { color: var(--text3); }
+  .detail-code .co { color: var(--coral); }
+
+  .detail-rules { list-style: none; }
+  .detail-rules li {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    font-weight: 300;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    line-height: 1.5;
+  }
+  .detail-rules li:last-child { border-bottom: none; }
+  .detail-rules li::before { content: '→'; color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 11px; }
+
+  .owner-tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+  .owner-morgan { background: #2a1010; color: #f07070; border: 1px solid #5a2020; }
+  .owner-jordan { background: #102a10; color: #70d070; border: 1px solid #205a20; }
+  .owner-alex   { background: #10102a; color: #7070f0; border: 1px solid #20205a; }
+  .owner-sam    { background: #2a2010; color: #d0a040; border: 1px solid #5a4020; }
+  .owner-taylor { background: #1a1a2a; color: #a0a0e0; border: 1px solid #3a3a5a; }
+
+  .detail-hint {
+    font-size: 12px;
+    color: var(--text3);
+    font-style: italic;
+    margin-top: 6px;
+  }
+
+  /* placeholder state */
+  .detail-placeholder {
+    padding: 48px 24px;
+    text-align: center;
+  }
+  .detail-placeholder .icon {
+    font-size: 32px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+  }
+  .detail-placeholder p {
+    font-size: 13px;
+    color: var(--text3);
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  /* ── Footer legend ── */
+  .legend {
+    max-width: 960px;
+    margin: 32px auto 0;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* fade-in animation for detail panel content */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .detail-body { animation: fadeIn 0.18s ease; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-meta">AI-First Bootcamp · Week 3 · Architecture Reference</div>
+  <h1>Chatbot <span>Architecture</span>
+    <span class="badge badge-click">click any component</span>
+  </h1>
+  <div class="header-sub">Conversations, Memory &amp; Streaming · dbean10/doc-qa · March 2026</div>
+</div>
+
+<div class="main">
+
+  <!-- ── LEFT: Diagram ── -->
+  <div class="diagram-panel">
+
+    <!-- Layer 0: User -->
+    <div class="layer-label">input</div>
+    <div class="layer user-row">
+      <div class="user-node node" data-id="user" onclick="select('user')">
+        <div class="node-title">User (CLI)</div>
+      </div>
+    </div>
+
+    <div class="connectors" style="justify-content:center;">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0">
+        <div class="connector-line"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">input() / print()</div>
+      </div>
+    </div>
+
+    <!-- Layer 1: chatbot.py -->
+    <div class="layer-label">orchestration layer</div>
+    <div class="layer">
+      <div class="container-node cn-purple" style="cursor:default">
+        <div class="container-title" style="cursor:pointer" onclick="select('chatbot')">chatbot.py — main loop</div>
+        <div class="inner-grid inner-grid-4">
+          <div class="node node-purple" data-id="warmup" onclick="select('warmup')">
+            <div class="node-title">_warmup()</div>
+            <div class="node-sub">drains cold start</div>
+          </div>
+          <div class="node node-purple" data-id="budget" onclick="select('budget')">
+            <div class="node-title">budget gate</div>
+            <div class="node-sub">warn / auto-summarize</div>
+          </div>
+          <div class="node node-purple" data-id="stream_response" onclick="select('stream_response')">
+            <div class="node-title">_stream_response()</div>
+            <div class="node-sub">streams + logs</div>
+          </div>
+          <div class="node node-purple" data-id="do_summarize" onclick="select('do_summarize')">
+            <div class="node-title">_do_summarize()</div>
+            <div class="node-sub">compress + replace</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connectors connectors-3">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Layer 2: Supporting classes -->
+    <div class="layer-label">state &amp; measurement layer</div>
+    <div class="layer">
+      <div class="inner-grid inner-grid-3" style="gap:8px">
+
+        <div class="node node-teal" data-id="message_history" onclick="select('message_history')">
+          <div class="node-title">MessageHistory</div>
+          <div class="node-sub" style="margin-top:6px">add_user()</div>
+          <div class="node-sub">add_assistant()</div>
+          <div class="node-sub">get_messages()</div>
+          <div class="node-sub">replace_with_summary()</div>
+        </div>
+
+        <div class="node node-teal" data-id="token_tracker" onclick="select('token_tracker')" style="position:relative">
+          <div class="jsonl-tag">JSONL</div>
+          <div class="node-title">TokenTracker</div>
+          <div class="node-sub" style="margin-top:6px">log_turn()</div>
+          <div class="node-sub">first_token_ms</div>
+          <div class="node-sub">total_ms · cost_usd</div>
+          <div class="node-sub">print_session_summary()</div>
+        </div>
+
+        <div class="node node-teal" data-id="summarizer" onclick="select('summarizer')">
+          <div class="node-title">Summarizer</div>
+          <div class="node-sub" style="margin-top:6px">semantic compression</div>
+          <div class="node-sub">role attribution rules</div>
+          <div class="node-sub">few-shot prompt</div>
+          <div class="node-sub">→ make_call_messages()</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="connectors connectors-3">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Layer 3: config.py -->
+    <div class="layer-label">architectural contract</div>
+    <div class="layer">
+      <div class="container-node cn-coral" style="cursor:default">
+        <div class="container-title" style="cursor:pointer" onclick="select('config')">config.py — single seam between local and production</div>
+        <div class="inner-grid inner-grid-3">
+          <div class="node node-coral" data-id="make_call_messages" onclick="select('make_call_messages')">
+            <div class="node-title">make_call_messages()</div>
+            <div class="node-sub">multi-turn blocking</div>
+          </div>
+          <div class="node node-coral" data-id="make_stream_call" onclick="select('make_stream_call')">
+            <div class="node-title">make_stream_call()</div>
+            <div class="node-sub">yields chunks</div>
+          </div>
+          <div class="node node-coral" data-id="count_tokens" onclick="select('count_tokens')">
+            <div class="node-title">count_tokens()</div>
+            <div class="node-sub">exact GCP · est. local</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connectors" style="padding:0 120px">
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="connector-line"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">local</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="connector-line"></div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text3);margin-top:2px">gcp</div>
+      </div>
+    </div>
+
+    <!-- Layer 4: Models -->
+    <div class="layer-label">model layer</div>
+    <div class="layer model-row">
+      <div class="node node-gray" data-id="ollama" onclick="select('ollama')">
+        <div class="node-title">Ollama (local)</div>
+        <div class="node-sub">llama3.2 · $0 · functional iteration only</div>
+      </div>
+      <div class="node node-gray" data-id="anthropic" onclick="select('anthropic')">
+        <div class="node-title">Anthropic API (prod)</div>
+        <div class="node-sub">claude-sonnet-4-6 · accuracy + security validation</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── RIGHT: Detail panel ── -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="detail-placeholder" id="detail-placeholder">
+      <div class="icon">⬡</div>
+      <p>Click any component in the diagram to see a detailed explanation, code example, and team sign-off notes.</p>
+    </div>
+    <div id="detail-content" style="display:none"></div>
+  </div>
+
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--purple-bg);border:1px solid var(--purple-bd)"></div>Orchestration</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--teal-bg);border:1px solid var(--teal-bd)"></div>State &amp; measurement</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--coral-bg);border:1px solid var(--coral-bd)"></div>Architectural contract</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--gray-bg);border:1px solid var(--gray-bd)"></div>Model layer</div>
+  <div class="legend-item" style="margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--text3)">dbean10/doc-qa · lab3/</div>
+</div>
+
+<script>
+const DATA = {
+  user: {
+    tag: 'Input layer',
+    title: 'User (CLI)',
+    subtitle: 'The human at the terminal',
+    color: 'var(--gray)',
+    desc: 'The developer interacting with the chatbot via the terminal. Provides raw text input each turn. Receives streamed token output in real time. Issues slash commands: /summarize, /cost, /quit.',
+    code: `<span class="cm"># Every turn follows this loop</span>
+user_input = <span class="fn">input</span>(<span class="st">"You: "</span>).strip()
+
+<span class="kw">if</span> user_input == <span class="st">"/quit"</span>:
+    <span class="kw">break</span>
+<span class="kw">elif</span> user_input == <span class="st">"/summarize"</span>:
+    _do_summarize(history, tracker)
+<span class="kw">else</span>:
+    history.<span class="fn">add_user</span>(user_input)
+    response = <span class="fn">_stream_response</span>(history, tracker)
+    history.<span class="fn">add_assistant</span>(response)`,
+    rules: [
+      'Raw input is never interpolated into the system prompt',
+      'Input goes directly into MessageHistory.add_user() — the injection boundary',
+      'Slash commands are handled before history is updated'
+    ],
+    owners: []
+  },
+
+  chatbot: {
+    tag: 'Orchestration layer',
+    title: 'chatbot.py',
+    subtitle: 'Main loop — thin orchestrator',
+    color: 'var(--purple)',
+    desc: 'The entry point and session controller. Deliberately thin — all business logic lives in the supporting classes. If this file grows beyond ~100 lines, something that belongs in a class has leaked into the loop.',
+    code: `<span class="cm"># chatbot.py owns the session lifecycle only</span>
+history = <span class="fn">MessageHistory</span>()
+tracker = <span class="fn">TokenTracker</span>(log_dir=<span class="st">"lab3/results"</span>)
+
+<span class="fn">_warmup</span>()          <span class="cm"># drain cold start</span>
+
+<span class="kw">while</span> <span class="kw">True</span>:
+    user_input = <span class="fn">input</span>(<span class="st">"You: "</span>).strip()
+    <span class="cm"># ... command dispatch ...</span>
+    <span class="cm"># ... budget gate ...</span>
+    history.<span class="fn">add_user</span>(user_input)
+    response = <span class="fn">_stream_response</span>(history, tracker)
+    history.<span class="fn">add_assistant</span>(response)`,
+    rules: [
+      'Never touches a model client directly — all calls go through config.py',
+      'Never accesses messages[] directly — all state goes through MessageHistory',
+      'Owns nothing except the session loop and command dispatch'
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Architecture sign-off' }]
+  },
+
+  warmup: {
+    tag: 'chatbot.py',
+    title: '_warmup()',
+    subtitle: 'Drains Ollama cold start before timed measurements',
+    color: 'var(--purple)',
+    desc: 'Fires one throwaway streaming call before the main loop begins. Ollama loads the model into memory on first inference — this call takes 10–15× longer than warm calls. Without a warmup, the first real user turn contaminates latency measurements.',
+    code: `<span class="kw">def</span> <span class="fn">_warmup</span>() -> <span class="co">None</span>:
+    <span class="fn">print</span>(<span class="st">"Warming up..."</span>, end=<span class="st">""</span>, flush=<span class="kw">True</span>)
+    <span class="kw">for</span> _ <span class="kw">in</span> <span class="fn">make_stream_call</span>(
+        [{<span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"hi"</span>}],
+        system=<span class="st">""</span>,
+        max_tokens=<span class="co">8</span>,
+    ):
+        <span class="kw">pass</span>   <span class="cm"># drain the generator</span>
+    <span class="fn">print</span>(<span class="st">" ready\n"</span>)`,
+    rules: [
+      'Always called before the main loop — never after',
+      'Generator is fully drained — not just called',
+      'max_tokens=8 keeps the throwaway call cheap',
+      'In prod (Cloud Run): use min-instances: 1 to prevent cold starts entirely'
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Pattern required' }]
+  },
+
+  budget: {
+    tag: 'chatbot.py',
+    title: 'budget gate',
+    subtitle: 'Token budget check before every send',
+    color: 'var(--purple)',
+    desc: 'Before each user turn is sent to the model, count_tokens() estimates the current context size. At TOKEN_BUDGET_WARNING (1500) the user sees an advisory. At TOKEN_BUDGET_HARD (3000) summarization runs automatically without waiting for the user to type /summarize.',
+    code: `TOKEN_BUDGET_WARNING = <span class="co">1500</span>
+TOKEN_BUDGET_HARD    = <span class="co">3000</span>
+
+current_tokens = <span class="fn">count_tokens</span>(
+    history.<span class="fn">get_messages</span>(), system=SYSTEM_PROMPT
+)
+
+<span class="kw">if</span> current_tokens >= TOKEN_BUDGET_HARD:
+    <span class="fn">print</span>(<span class="st">f"⚠️  Context at {current_tokens} tokens — auto-summarizing..."</span>)
+    <span class="fn">_do_summarize</span>(history, tracker)
+<span class="kw">elif</span> current_tokens >= TOKEN_BUDGET_WARNING:
+    <span class="fn">print</span>(<span class="st">f"⚠️  Context: ~{current_tokens} tokens. Consider /summarize"</span>)`,
+    rules: [
+      'Runs before add_user() — checks the cost of what you are about to send',
+      'Local counts are approximations (~3 chars/token) — gate fires a bit late',
+      'Hard limit auto-summarizes silently — soft limit is advisory only',
+      'Taylor reads token counts in Week 6 to set alert thresholds'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Budget thresholds approved' },
+      { label: 'Taylor', cls: 'owner-taylor', note: 'Week 6 cost alerts built on this' }
+    ]
+  },
+
+  stream_response: {
+    tag: 'chatbot.py',
+    title: '_stream_response()',
+    subtitle: 'Streams one assistant turn and logs metrics',
+    color: 'var(--purple)',
+    desc: 'Calls make_stream_call(), measures first-token latency and total time, assembles the full response string from chunks, logs everything to TokenTracker, and returns the assembled string for add_assistant().',
+    code: `<span class="kw">def</span> <span class="fn">_stream_response</span>(history, tracker) -> <span class="co">str</span>:
+    chunks = []
+    first_token_ms = <span class="kw">None</span>
+    start = time.<span class="fn">time</span>()
+
+    <span class="kw">for</span> chunk <span class="kw">in</span> <span class="fn">make_stream_call</span>(
+        history.<span class="fn">get_messages</span>(), system=SYSTEM_PROMPT
+    ):
+        <span class="kw">if</span> first_token_ms <span class="kw">is None</span>:
+            first_token_ms = (time.<span class="fn">time</span>() - start) * <span class="co">1000</span>
+        <span class="fn">print</span>(chunk, end=<span class="st">""</span>, flush=<span class="kw">True</span>)  <span class="cm"># flush= critical</span>
+        chunks.<span class="fn">append</span>(chunk)
+
+    full_response = <span class="st">""</span>.<span class="fn">join</span>(chunks)
+    tracker.<span class="fn">log_turn</span>(...)
+    <span class="kw">return</span> full_response`,
+    rules: [
+      'flush=True on every print() — without it Python buffers stdout',
+      'Assembles full response before calling add_assistant()',
+      'First-token latency measured at the call site, not inside config.py',
+      'Gate: warns if first_token_ms > 500 on any warm call'
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: '< 500ms gate · 207ms achieved' },
+      { label: 'Sam', cls: 'owner-sam', note: 'flush=True pattern' }
+    ]
+  },
+
+  do_summarize: {
+    tag: 'chatbot.py',
+    title: '_do_summarize()',
+    subtitle: 'Compress history and replace with summary + recent turns',
+    color: 'var(--purple)',
+    desc: 'Counts tokens before and after compression to measure reduction. Calls Summarizer.summarize(), then calls MessageHistory.replace_with_summary(). Logs the summarize call to TokenTracker as call_type="summarize".',
+    code: `<span class="kw">def</span> <span class="fn">_do_summarize</span>(history, tracker) -> <span class="co">None</span>:
+    tokens_before = <span class="fn">count_tokens</span>(
+        history.<span class="fn">get_messages</span>()
+    )
+    summary_text, in_tok, out_tok = <span class="fn">summarize</span>(
+        history.<span class="fn">get_messages</span>(), tracker
+    )
+    history.<span class="fn">replace_with_summary</span>(summary_text)
+
+    tokens_after = <span class="fn">count_tokens</span>(history.<span class="fn">get_messages</span>())
+    reduction = <span class="fn">round</span>((<span class="co">1</span> - tokens_after / tokens_before) * <span class="co">100</span>)
+    <span class="fn">print</span>(<span class="st">f"✓ {reduction}% reduction"</span>)`,
+    rules: [
+      'Only callable if len(history) >= 4 — nothing to compress otherwise',
+      'Logs to TokenTracker as call_type="summarize" to separate cost',
+      'Jordan: check token reduction after every /summarize — < 50% means conversation was too short'
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Token reduction logged per call' }]
+  },
+
+  message_history: {
+    tag: 'State layer',
+    title: 'MessageHistory',
+    subtitle: 'lab3/message_history.py · owns the messages[] array',
+    color: 'var(--teal)',
+    desc: 'The sole owner of the conversation history. Nothing outside this class appends to or reads from messages[] directly. Defensive copy on get_messages() prevents external mutation. The assistant role pattern: the model has no memory — you construct memory by replaying its prior outputs back to it each turn.',
+    code: `<span class="cm"># The assistant role is YOUR data, not the model's memory</span>
+history.<span class="fn">add_user</span>(<span class="st">"What is my name?"</span>)
+response = <span class="fn">_stream_response</span>(history, tracker)
+history.<span class="fn">add_assistant</span>(response)  <span class="cm"># ← critical step</span>
+
+<span class="cm"># get_messages() returns a defensive copy</span>
+msgs = history.<span class="fn">get_messages</span>()
+msgs.<span class="fn">append</span>({...})  <span class="cm"># does NOT affect history</span>
+
+<span class="cm"># replace_with_summary keeps last N turns intact</span>
+history.<span class="fn">replace_with_summary</span>(
+    summary_text, keep_last_n=<span class="co">4</span>
+)
+<span class="cm"># result: [summary_msg] + last 4 messages</span>`,
+    rules: [
+      'add_user() is the injection boundary — user content goes here only, never into system prompt',
+      'add_assistant() must be called after every streamed turn — forgetting it breaks history continuity',
+      'messages[] must strictly alternate user → assistant → user → assistant',
+      'keep_last_n=4 gives 2 full turns of continuity after compression'
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Injection boundary enforced' },
+      { label: 'Alex', cls: 'owner-alex', note: 'Context window design' }
+    ]
+  },
+
+  token_tracker: {
+    tag: 'Measurement layer',
+    title: 'TokenTracker',
+    subtitle: 'lab3/token_tracker.py · per-turn JSONL logging',
+    color: 'var(--teal)',
+    desc: 'Records every API call with token counts, latency, cost, and call type. Writes to JSONL on every turn — not at session end — so data survives process crashes. The log schema is a contract: schema_version must be bumped on any structural change. Taylor reads this schema in Week 6 to build the cost dashboard.',
+    code: `<span class="cm"># TurnLog schema — frozen contract for Taylor (Week 6)</span>
+<span class="kw">@dataclass</span>
+<span class="kw">class</span> <span class="fn">TurnLog</span>:
+    turn:           <span class="co">int</span>
+    input_tokens:   <span class="co">int</span>
+    output_tokens:  <span class="co">int</span>
+    first_token_ms: <span class="co">float | None</span>
+    total_ms:       <span class="co">float</span>
+    cost_usd:       <span class="co">float</span>
+    call_type:      <span class="co">str</span>  <span class="cm"># "chat" | "summarize" | "warmup"</span>
+    timestamp_utc:  <span class="co">str</span>
+
+<span class="cm"># Pricing constants — one place to update</span>
+INPUT_PRICE_PER_M  = <span class="co">3.00</span>   <span class="cm"># USD per million tokens</span>
+OUTPUT_PRICE_PER_M = <span class="co">15.00</span>`,
+    rules: [
+      'Writes to JSONL on every turn — crash-safe by design',
+      'Schema is a contract — schema_version must be bumped on any field change',
+      'lab3/results/ is in .gitignore — data artifacts never go into git',
+      'call_type separates chat cost from summarization cost in dashboards'
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Per-turn logging required' },
+      { label: 'Taylor', cls: 'owner-taylor', note: 'Week 6 dashboard reads this schema' }
+    ]
+  },
+
+  summarizer: {
+    tag: 'Compression layer',
+    title: 'Summarizer',
+    subtitle: 'lab3/summarizer.py · semantic compression with role attribution',
+    color: 'var(--teal)',
+    desc: 'Compresses conversation history into a compact summary. The key finding this week: "semantically compress" in the prompt strips injection attempts naturally, but role attribution requires an explicit few-shot example. llama3.2 fails the misattribution test. claude-sonnet-4-6 passes all 4 tests.',
+    code: `<span class="cm"># CRITICAL rule in SUMMARIZE_SYSTEM_PROMPT</span>
+<span class="st">"""
+WRONG: "The user finds the experience liberating."
+  (liberating = assistant's word, not user's)
+
+CORRECT: "The user finds the experience fun.
+  The assistant described it as liberating."
+"""</span>
+
+<span class="cm"># Run security tests against prod model only</span>
+<span class="cm"># ENVIRONMENT=gcp uv run python lab3/test_summarizer.py</span>
+
+<span class="cm"># 4 tests: compression, attribution, misattribution, injection</span>`,
+    rules: [
+      'Semantic compression — never "preserve verbatim" — strips injection naturally',
+      'Role attribution: only attribute words to whoever actually said them',
+      'llama3.2 fails misattribution test — known model capability limit',
+      'Security and accuracy tests MUST run against Claude, not local model',
+      '74% token reduction verified in real session; 77% in test suite'
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Adversarial injection stripped ✓' },
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Role attribution verified vs Claude ✓' }
+    ]
+  },
+
+  config: {
+    tag: 'Architectural contract',
+    title: 'config.py',
+    subtitle: 'The single seam between local dev and production',
+    color: 'var(--coral)',
+    desc: 'Nothing outside config.py knows which model is running. ENVIRONMENT=local routes to Ollama at zero cost. ENVIRONMENT=gcp routes to real APIs. This is not a convenience — it is the architectural contract that makes zero-cost local iteration possible.',
+    code: `<span class="kw">ENVIRONMENT</span>: Final[str] = os.<span class="fn">getenv</span>(<span class="st">"ENVIRONMENT"</span>, <span class="st">"local"</span>)
+
+<span class="cm"># All three functions return the same shape</span>
+<span class="cm"># The caller never branches on ENVIRONMENT</span>
+
+<span class="fn">make_call</span>(system, user_msg, temp)     <span class="cm"># Week 1 — single-turn</span>
+<span class="fn">make_call_messages</span>(messages, system)  <span class="cm"># Week 3 — multi-turn</span>
+<span class="fn">make_stream_call</span>(messages, system)    <span class="cm"># Week 3 — streaming</span>
+<span class="fn">count_tokens</span>(messages, system)        <span class="cm"># Week 3 — pre-send count</span>
+
+<span class="cm"># Run prod tests locally:</span>
+<span class="cm"># ENVIRONMENT=gcp \</span>
+<span class="cm">#   ANTHROPIC_API_KEY=$(gcloud secrets versions access \</span>
+<span class="cm">#     latest --secret=ANTHROPIC_API_KEY) \</span>
+<span class="cm">#   uv run python lab3/test_summarizer.py</span>`,
+    rules: [
+      'Nothing outside config.py ever branches on ENVIRONMENT — the contract holds',
+      'API keys come from Secret Manager in prod, never from .env or code',
+      'make_call() preserved for Week 1/2 backward compatibility — never removed',
+      'count_tokens() is approximate locally (~3 chars/token) — exact in GCP mode'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Architectural contract sign-off' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'No keys in code — ever' },
+      { label: 'Sam', cls: 'owner-sam', note: 'Abstraction verified both modes' }
+    ]
+  },
+
+  make_call_messages: {
+    tag: 'config.py',
+    title: 'make_call_messages()',
+    subtitle: 'Multi-turn blocking call — returns _Response',
+    color: 'var(--coral)',
+    desc: 'Takes a full messages[] array and optional system prompt. Used for any blocking multi-turn call — primarily the Summarizer. Returns the same _Response shape as make_call() so callers never need to know which variant they used.',
+    code: `<span class="kw">def</span> <span class="fn">make_call_messages</span>(
+    messages: <span class="co">list[dict]</span>,
+    system: <span class="co">str</span> = <span class="st">""</span>,
+    temperature: <span class="co">float</span> = <span class="co">0.0</span>,
+    max_tokens: <span class="co">int</span> = <span class="co">512</span>,
+) -> <span class="co">_Response</span>:
+    <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+        <span class="kw">return</span> <span class="fn">_call_ollama_messages</span>(...)
+    <span class="kw">return</span> <span class="fn">_call_anthropic_messages</span>(...)
+
+<span class="cm"># Same _Response shape as make_call():</span>
+resp.content[<span class="co">0</span>].text          <span class="cm"># the text</span>
+resp.usage.input_tokens       <span class="cm"># for cost tracking</span>
+resp.usage.output_tokens`,
+    rules: [
+      'Backward compatible with make_call() — same return shape',
+      'system param is optional — omit for summarizer-style calls where system is baked into messages',
+      'Used by Summarizer — not by the main streaming loop'
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Interface contract preserved' }]
+  },
+
+  make_stream_call: {
+    tag: 'config.py',
+    title: 'make_stream_call()',
+    subtitle: 'Streaming generator — yields text chunks',
+    color: 'var(--coral)',
+    desc: 'Returns a Generator[str] that yields text chunks as they arrive. Local: OpenAI-compatible Ollama endpoint with stream=True. GCP: Anthropic SDK context manager. The caller measures first-token latency — config.py just yields.',
+    code: `<span class="kw">def</span> <span class="fn">make_stream_call</span>(
+    messages: <span class="co">list[dict]</span>,
+    system: <span class="co">str</span> = <span class="st">""</span>,
+    ...
+) -> <span class="co">Generator[str, None, None]</span>:
+    <span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+        <span class="kw">yield from</span> <span class="fn">_stream_ollama</span>(...)
+    <span class="kw">else</span>:
+        <span class="kw">yield from</span> <span class="fn">_stream_anthropic</span>(...)
+
+<span class="cm"># Consumer pattern — flush= is non-negotiable</span>
+<span class="kw">for</span> chunk <span class="kw">in</span> <span class="fn">make_stream_call</span>(messages, system):
+    <span class="fn">print</span>(chunk, end=<span class="st">""</span>, flush=<span class="kw">True</span>)`,
+    rules: [
+      'flush=True on every print() consuming this — Python buffers stdout without it',
+      'Caller measures first-token latency — not this function',
+      'Caller assembles full response from chunks before calling add_assistant()',
+      'Verified: 207ms first-token latency on warm Ollama call'
+    ],
+    owners: [
+      { label: 'Sam', cls: 'owner-sam', note: 'flush=True — non-negotiable' },
+      { label: 'Jordan', cls: 'owner-jordan', note: '207ms first token ✓' }
+    ]
+  },
+
+  count_tokens: {
+    tag: 'config.py',
+    title: 'count_tokens()',
+    subtitle: 'Pre-send token estimate — exact GCP, approx local',
+    color: 'var(--coral)',
+    desc: 'Returns the input token count for a messages array without making an inference call. Local mode uses ~3 chars/token approximation (undercounts by 30–50% on short messages). GCP mode calls the Anthropic count_tokens API for exact counts. Used by the budget gate before every send.',
+    code: `<span class="kw">if</span> ENVIRONMENT == <span class="st">"local"</span>:
+    <span class="cm"># ~3 chars/token approximation</span>
+    <span class="cm"># Undercounts 30-50% on short conversational messages</span>
+    <span class="cm"># Acceptable for warning thresholds only</span>
+    <span class="cm"># Taylor (Week 6): treat local counts as estimates</span>
+    total_chars = <span class="fn">sum</span>(
+        <span class="fn">len</span>(m[<span class="st">"content"</span>]) <span class="kw">for</span> m <span class="kw">in</span> messages
+    )
+    <span class="kw">return</span> total_chars // <span class="co">3</span>
+
+<span class="cm"># GCP: exact count, no inference call</span>
+result = client.messages.<span class="fn">count_tokens</span>(**kwargs)
+<span class="kw">return</span> result.input_tokens`,
+    rules: [
+      'Read-only in GCP mode — no inference, no cost beyond the count call itself',
+      'Local approximation: test session showed 22 vs actual 59 (63% undercount)',
+      'Limitation is documented in the code for Taylor (Week 6)',
+      'Good enough for soft warning thresholds — not for hard billing limits'
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Limitation documented for Week 6' },
+      { label: 'Taylor', cls: 'owner-taylor', note: 'Treat local counts as estimates' }
+    ]
+  },
+
+  ollama: {
+    tag: 'Model layer — local',
+    title: 'Ollama (local)',
+    subtitle: 'llama3.2 · zero cost · functional iteration only',
+    color: 'var(--gray)',
+    desc: 'Runs llama3.2 locally at zero API cost. Used for all functional development — does the loop work, does the JSON parse, does the format match. Not suitable for accuracy or security validation.',
+    code: `<span class="cm"># Local mode — Ollama via OpenAI-compatible endpoint</span>
+client = openai.<span class="fn">OpenAI</span>(
+    base_url=<span class="st">"http://localhost:11434/v1"</span>,
+    api_key=<span class="st">"ollama"</span>,
+)
+
+<span class="cm"># Streaming: stream=True on same client</span>
+stream = client.chat.completions.<span class="fn">create</span>(
+    model=<span class="st">"llama3.2"</span>, stream=<span class="kw">True</span>, ...
+)
+
+<span class="cm"># Known limitation: fails role attribution</span>
+<span class="cm"># in summarization tasks — use Claude for that</span>`,
+    rules: [
+      'Use for: format testing, loop logic, JSON parsing, latency measurement',
+      'Do NOT use for: accuracy testing, security validation, summarizer quality',
+      'llama3.2 failed the misattribution test — known model capability limit',
+      'Cold start: first call is 10–15× slower — always warmup before measuring',
+      'Sam: do not skip Ollama setup to use real API during dev — billing surprises by Week 3'
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Local dev — never skip setup' }]
+  },
+
+  anthropic: {
+    tag: 'Model layer — production',
+    title: 'Anthropic API',
+    subtitle: 'claude-sonnet-4-6 · accuracy + security validation',
+    color: 'var(--gray)',
+    desc: 'Production model. Used for CI security tests, accuracy validation, and production inference. Key finding this week: Claude passed all 4 summarizer tests including the misattribution test that llama3.2 failed. Run prod-model tests locally via the Secret Manager pattern.',
+    code: `<span class="cm"># Run prod tests locally — key from Secret Manager</span>
+<span class="cm"># Never from .env or hardcoded</span>
+ENVIRONMENT=gcp \
+  ANTHROPIC_API_KEY=$(<span class="fn">gcloud secrets versions access</span> \
+    latest --secret=ANTHROPIC_API_KEY) \
+  uv run python lab3/test_summarizer.py
+
+<span class="cm"># Streaming via SDK context manager</span>
+<span class="kw">with</span> client.messages.<span class="fn">stream</span>(**kwargs) <span class="kw">as</span> stream:
+    <span class="kw">for</span> text <span class="kw">in</span> stream.text_stream:
+        <span class="kw">yield</span> text`,
+    rules: [
+      'Model string is always version-pinned: claude-sonnet-4-6',
+      'API key comes from GCP Secret Manager — never from .env or code',
+      'CI adversarial tests run against Claude — never the local model',
+      'Morgan: git log --all -p | grep -i api_key before every lab submission'
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Keys from Secret Manager only' },
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Security tests must run vs Claude' }
+    ]
+  }
+};
+
+let activeId = null;
+
+function select(id) {
+  if (!DATA[id]) return;
+
+  // deactivate previous
+  document.querySelectorAll('.node, .user-node').forEach(n => n.classList.remove('active'));
+
+  // activate clicked
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(n => n.classList.add('active'));
+  activeId = id;
+
+  const d = DATA[id];
+  document.getElementById('detail-placeholder').style.display = 'none';
+  const content = document.getElementById('detail-content');
+  content.style.display = 'block';
+
+  let ownersHtml = '';
+  if (d.owners && d.owners.length > 0) {
+    ownersHtml = `
+      <div class="detail-section">
+        <div class="detail-section-label">Team sign-off</div>
+        <ul class="detail-rules">
+          ${d.owners.map(o => `<li><span class="owner-tag ${o.cls}">${o.label}</span>${o.note}</li>`).join('')}
+        </ul>
+      </div>`;
+  }
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-tag">${d.tag}</div>
+      <div class="detail-title" style="color:${d.color}">${d.title}</div>
+      <div class="detail-subtitle">${d.subtitle}</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-label">What it does</div>
+        <div class="detail-desc">${d.desc}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Code example</div>
+        <div class="detail-code">${d.code}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Rules &amp; gotchas</div>
+        <ul class="detail-rules">
+          ${d.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+      ${ownersHtml}
+    </div>`;
+}
+</script>
+</body>
+</html>
