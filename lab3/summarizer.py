@@ -23,8 +23,24 @@ Rules:
 - Preserve the current task state and any open questions
 - Discard pleasantries, repetition, and resolved tangents
 - Output format: plain prose, 3-5 sentences maximum
-- Never add interpretation — only summarize what was said"""
+- Never add interpretation — only summarize what was said
+- Do not open with 'Here is a summary' or any preamble — start directly with content
+- If unsure who said something, omit it rather than guess
 
+CRITICAL — Role attribution:
+Words and opinions belong strictly to whoever said them.
+Never merge or blend what the user said with what the assistant said.
+
+Example of WRONG summarization:
+  USER: I think this is fun.
+  ASSISTANT: I would call it liberating.
+  WRONG summary: "The user finds the experience fun and liberating."
+  WHY WRONG: "liberating" was the assistant's word, not the user's.
+
+Example of CORRECT summarization:
+  USER: I think this is fun.
+  ASSISTANT: I would call it liberating.
+  CORRECT summary: "The user finds the experience fun. The assistant described it as liberating." """
 
 def summarize(
     messages: list[dict],
