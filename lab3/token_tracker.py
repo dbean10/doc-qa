@@ -11,7 +11,7 @@ When Anthropic changes pricing, you change one file."
 
 import json
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 # ─── Pricing — claude-sonnet-4-6 as of March 2026 ────────────────────────────
