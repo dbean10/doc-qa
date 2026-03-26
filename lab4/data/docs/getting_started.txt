@@ -1,0 +1,11 @@
+Getting Started Guide
+
+Welcome to the platform. This guide covers the first steps to set up your account and begin using the core features.
+
+To create an account, visit the signup page and enter your email address and a password. You will receive a confirmation email within a few minutes. Click the confirmation link to activate your account.
+
+Once logged in, you will see the main dashboard. The dashboard displays your recent activity, quick-access shortcuts, and system notifications. You can customise the layout by dragging panels to new positions.
+
+Your first step after login should be to complete your profile. Navigate to Settings > Profile and fill in your name, timezone, and notification preferences. Completing your profile unlocks all platform features.
+
+If you do not receive a confirmation email, check your spam folder. You can also request a new confirmation email from the login page by clicking "Resend confirmation."

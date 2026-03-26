@@ -1,0 +1,13 @@
+Mobile App
+
+The platform is available as a native app for iOS and Android.
+
+Download the iOS app from the App Store and the Android app from Google Play. Search for the platform name to find the official app.
+
+Log in with your existing account credentials. If your workspace uses SSO, tap "Sign in with SSO" and enter your workspace domain.
+
+The mobile app supports offline access to recently viewed content. Changes made offline sync automatically when you reconnect.
+
+Push notifications can be configured in the app under Settings > Notifications. You can also manage them from your device's system notification settings.
+
+Biometric authentication including Face ID, Touch ID, and fingerprint can be enabled from the app's Settings > Security menu for faster and more secure login.

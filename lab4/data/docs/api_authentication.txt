@@ -1,0 +1,14 @@
+API Authentication
+
+The platform API uses API keys for authentication. Each key is tied to a single account and carries that account's permissions.
+
+To generate an API key, navigate to Settings > API > API Keys and click "Generate New Key." Give the key a descriptive name such as "Production Server" or "Development Machine."
+
+API keys must be included in every request as a Bearer token in the Authorization header:
+    Authorization: Bearer your_api_key_here
+
+Keep your API keys secret. Do not commit them to version control or share them in public channels. If a key is compromised, revoke it immediately and generate a replacement.
+
+Keys can be scoped to read-only or read-write access. Use read-only keys wherever write access is not required. You can also set an expiry date on a key to automatically disable it after a fixed period.
+
+Rate limits apply per API key: 100 requests per minute on the free tier, 1000 per minute on paid plans.

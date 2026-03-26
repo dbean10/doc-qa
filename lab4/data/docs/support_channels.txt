@@ -1,0 +1,14 @@
+Contacting Support
+
+Support is available through several channels depending on your plan.
+
+Free plan: Community forum and documentation only.
+Starter plan: Email support with a response time of 2 business days.
+Professional plan: Email support with a response time of 8 business hours.
+Enterprise plan: Dedicated Slack channel with a response time of 1 hour, plus a named account manager.
+
+To open a support ticket, click "Help" in the bottom-left corner of the interface and select "Contact Support." Describe your issue in detail including steps to reproduce any problems, and attach screenshots if relevant.
+
+For urgent issues on Professional or Enterprise plans, mark your ticket as "High Priority." This escalates the ticket to the on-call support engineer.
+
+The community forum at community.example.com is publicly accessible and contains answers to frequently asked questions and tips from other users.

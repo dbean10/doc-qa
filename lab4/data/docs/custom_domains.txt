@@ -1,0 +1,11 @@
+Custom Domains
+
+Professional and Enterprise plan subscribers can serve the platform from a custom domain.
+
+To set up a custom domain, go to Settings > Workspace > Custom Domain. Enter your desired domain such as app.yourcompany.com and follow the DNS configuration instructions shown.
+
+You will need to add a CNAME record pointing your domain to our servers and a TXT record to verify ownership. DNS changes can take up to 48 hours to propagate.
+
+SSL certificates are provisioned automatically via Let's Encrypt once DNS verification is complete. Certificate renewal is handled automatically.
+
+Custom domains are workspace-scoped. Each workspace can have one primary domain and up to three additional aliases.

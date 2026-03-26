@@ -1,0 +1,11 @@
+Third-Party Integrations
+
+The platform supports integrations with popular tools including Slack, GitHub, Jira, and Zapier.
+
+To connect an integration, go to Settings > Integrations and click the integration you want to enable. You will be redirected to the third-party service to grant permissions.
+
+Slack integration sends notifications to a chosen channel when specific events occur. Configure which events trigger notifications from Settings > Integrations > Slack > Configure.
+
+GitHub integration links commits and pull requests to items in your workspace. Set it up by connecting your GitHub account and selecting which repositories to sync.
+
+To disconnect an integration, go to Settings > Integrations, find the active integration, and click "Disconnect." This immediately stops data flow between the services. Your existing data is not deleted.

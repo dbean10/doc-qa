@@ -1,0 +1,21 @@
+Keyboard Shortcuts
+
+Keyboard shortcuts speed up common actions across the platform.
+
+Global shortcuts work from any page:
+  Cmd/Ctrl + K    Open search
+  Cmd/Ctrl + /    Show keyboard shortcut reference
+  G then D        Go to Dashboard
+  G then S        Go to Settings
+
+Editor shortcuts:
+  Cmd/Ctrl + B    Bold
+  Cmd/Ctrl + I    Italic
+  Cmd/Ctrl + Z    Undo
+  Cmd/Ctrl + Y    Redo
+  Cmd/Ctrl + S    Save
+
+Navigation shortcuts:
+  J / K           Move down / up through a list
+  Enter           Open selected item
+  Escape          Close modal or panel

@@ -1,0 +1,11 @@
+Two-Factor Authentication
+
+Two-factor authentication (2FA) adds an extra layer of security to your account by requiring a second verification step at login.
+
+To enable 2FA, go to Settings > Security > Two-Factor Authentication and click "Enable." Scan the QR code with an authenticator app such as Google Authenticator, Authy, or 1Password. Enter the six-digit code displayed in the app to confirm setup.
+
+Once enabled, you will be prompted for a verification code each time you log in. Codes are time-based and expire after 30 seconds.
+
+Save your backup codes when you set up 2FA. If you lose access to your authenticator app, backup codes are the only way to recover your account. Store them somewhere safe, separate from your password.
+
+Workspace admins can require 2FA for all members from Settings > Security > Require 2FA. Members will be prompted to set it up on their next login.

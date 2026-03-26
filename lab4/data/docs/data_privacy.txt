@@ -1,0 +1,11 @@
+Data Privacy and Compliance
+
+We are committed to protecting your data. Our platform complies with GDPR, CCPA, and SOC 2 Type II requirements.
+
+Data is stored in encrypted form at rest using AES-256. All data in transit is protected by TLS 1.2 or higher.
+
+We do not sell your data to third parties. Data shared with third-party integrations is governed by those services' privacy policies and your own configuration choices.
+
+You have the right to access, correct, and delete your personal data. Submit a data subject access request from Settings > Privacy > Data Requests. We will respond within 30 days.
+
+For enterprise customers we offer data processing agreements and custom data residency options. Contact your account manager to arrange these.

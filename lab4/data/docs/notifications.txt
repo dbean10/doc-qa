@@ -1,0 +1,11 @@
+Notification Settings
+
+You can control which notifications you receive and how they are delivered from Settings > Notifications.
+
+In-app notifications appear in the notification bell at the top of the interface. Email notifications are sent to your account email address. Push notifications are available if you have the mobile app installed.
+
+For each notification type you can choose: all activity, only mentions and direct messages, or none.
+
+Quiet hours suppress notifications during a time window you define. Configure quiet hours from Settings > Notifications > Quiet Hours. You can set different hours for weekdays and weekends.
+
+Team-level notification rules can override your personal settings if a workspace admin has configured them.
