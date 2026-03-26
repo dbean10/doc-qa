@@ -1,0 +1,11 @@
+Version History and Restore
+
+Every document and record on the platform keeps a full version history.
+
+To view version history, open any item and click the clock icon in the top-right corner. The history panel shows all saved versions with their timestamp and the user who made the change.
+
+To restore a previous version, click on that version in the history panel and then click "Restore This Version." The current version is not deleted — it becomes another entry in the history.
+
+Version history is retained for 90 days on Starter plans and indefinitely on Professional and Enterprise plans.
+
+You can compare any two versions side-by-side by selecting both with Cmd/Ctrl+click and then clicking "Compare."

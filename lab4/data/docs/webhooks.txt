@@ -1,0 +1,11 @@
+Webhooks
+
+Webhooks allow your systems to receive real-time notifications when events occur on the platform.
+
+To create a webhook, navigate to Settings > API > Webhooks and click "Add Webhook." Enter the URL of your endpoint and select the event types you want to receive.
+
+Webhook payloads are sent as HTTP POST requests with a JSON body. Each payload includes an event type, a timestamp, and a data object containing the relevant record.
+
+To verify that a webhook comes from us, each request includes an X-Signature header containing an HMAC-SHA256 signature of the request body. Validate this signature using your webhook secret.
+
+If your endpoint does not respond with a 2xx status code within 10 seconds, we will retry delivery up to five times with exponential backoff. Failed deliveries are logged in Settings > API > Webhooks > Delivery Log.

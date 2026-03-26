@@ -1,0 +1,11 @@
+Exporting Your Data
+
+You can export all data associated with your account at any time from Settings > Data > Export.
+
+Supported export formats are JSON and CSV. JSON exports include full metadata and nested relationships. CSV exports flatten the data and are best suited for spreadsheet analysis.
+
+Large exports are processed asynchronously. After requesting an export, you will receive an email with a download link when the file is ready. Typical processing time is under 10 minutes for accounts with under 10,000 records.
+
+Export files are available for download for 7 days. After that they are deleted from our servers.
+
+If you need to export data on a recurring schedule, use the API's /export endpoint which supports automated programmatic access to the same data.

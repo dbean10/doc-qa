@@ -1,0 +1,11 @@
+Billing and Payments
+
+All plans are billed monthly or annually. Annual plans include a 20% discount compared to monthly billing.
+
+Payment methods accepted include Visa, Mastercard, American Express, and PayPal. We do not accept cryptocurrency or wire transfers at this time.
+
+To update your payment method, go to Settings > Billing > Payment Methods. You can add a new card, set a default payment method, or remove an old one. Changes take effect on the next billing cycle.
+
+Invoices are generated on the first day of each billing period and sent to the email address on your account. You can download past invoices from Settings > Billing > Invoice History.
+
+If a payment fails, we will retry the charge three times over seven days. If all retries fail, your account will be downgraded to the free tier. Your data is retained for 90 days.

@@ -1,0 +1,13 @@
+Search Features
+
+The platform includes full-text search across all content in your workspace.
+
+To search, click the search bar at the top of any page or press Cmd+K on Mac or Ctrl+K on Windows and Linux. Type your query and press Enter.
+
+Search results are ranked by relevance. Use quotes to search for an exact phrase: "quarterly report" will only match that exact sequence of words.
+
+Filters narrow your results by content type, date range, author, or project. Click "Filters" next to the search bar to access them.
+
+Saved searches let you quickly repeat frequent searches. After running a search, click "Save this search" and give it a name. Saved searches appear in the left sidebar.
+
+Search indexes are updated in near real-time. New content typically appears in search results within 60 seconds of being created.

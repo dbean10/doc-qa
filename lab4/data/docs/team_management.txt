@@ -1,0 +1,11 @@
+Managing Your Team
+
+Workspace owners can invite team members from Settings > Team > Members. Enter the email address of the person you want to invite and select their role.
+
+Available roles are: Owner, Admin, Editor, and Viewer. Owners have full access including billing. Admins can manage team members but cannot access billing. Editors can create and modify content. Viewers have read-only access.
+
+To change a member's role, click the three-dot menu next to their name in the Members list and select "Change Role."
+
+Removing a team member immediately revokes their access. Their contributions to shared projects are retained. You can re-invite a removed member at any time.
+
+Workspace owners can transfer ownership to another team member from Settings > Team > Transfer Ownership. This action is irreversible without the new owner's cooperation.

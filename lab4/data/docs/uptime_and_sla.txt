@@ -1,0 +1,11 @@
+Uptime and SLA
+
+We target 99.9% uptime for all paid plans. This corresponds to a maximum of approximately 8.7 hours of downtime per year.
+
+Current and historical uptime data is published on our status page at status.example.com. You can subscribe to incident notifications via email or RSS from that page.
+
+Scheduled maintenance windows occur on the first Sunday of each month between 02:00 and 04:00 UTC. These windows are announced at least 72 hours in advance on the status page.
+
+Enterprise plans include a financially-backed SLA with service credits if uptime falls below the guaranteed threshold. Contact sales for details.
+
+In the event of an incident our team posts updates to the status page within 30 minutes of detection and continues posting updates at 30-minute intervals until resolved.

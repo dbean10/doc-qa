@@ -1,0 +1,14 @@
+Storage Limits and Quotas
+
+Storage limits depend on your plan tier.
+
+Free plan: 1 GB storage, 3 projects, 5 team members.
+Starter plan: 10 GB storage, unlimited projects, 15 team members.
+Professional plan: 100 GB storage, unlimited projects, unlimited team members.
+Enterprise plan: Custom storage, unlimited everything, dedicated support.
+
+Storage usage is calculated as the sum of all files uploaded to your workspace including attachments, images, and exported data. Database records do not count toward storage.
+
+When you approach your storage limit, you will receive an email notification at 80% and 95% usage. Uploading new files is blocked when you reach 100%.
+
+To free up storage, delete unused files from the Files section of your workspace. Deleted files move to Trash and are permanently removed after 30 days.
