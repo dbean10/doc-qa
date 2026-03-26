@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 4 — Tool Use & RAG Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --green:     #50d080;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-link:hover { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  .nav-link.active { background: var(--purple-bg); border-color: var(--purple-bd); color: var(--purple); }
+  .nav-link.ci { margin-left: auto; color: var(--teal); border-color: var(--teal-bd); background: var(--teal-bg); }
+  .nav-link.ci:hover { background: #132e25; border-color: var(--teal); }
+  .nav-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+  /* ── Header ── */
+  .header {
+    max-width: 960px;
+    margin: 40px auto 48px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 { font-size: 26px; font-weight: 500; color: #e8f0ff; letter-spacing: -0.02em; line-height: 1.2; }
+  .header h1 span { color: var(--purple); }
+  .header-sub { margin-top: 8px; font-size: 13px; color: var(--text2); font-weight: 300; }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 3px; margin-left: 10px; vertical-align: middle;
+  }
+  .badge-new { background: var(--teal-bg); color: var(--teal); border: 1px solid var(--teal-bd); }
+  .badge-extends { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-bd); }
+
+  /* ── Layout ── */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Diagram panel ── */
+  .diagram-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+  .layer-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; padding-left: 2px;
+  }
+  .layer { margin-bottom: 8px; }
+  .connectors {
+    display: flex; justify-content: space-around; padding: 0 20px;
+    height: 32px; align-items: center; position: relative;
+  }
+  .connector-line {
+    width: 1px; height: 32px; background: var(--border2); position: relative;
+  }
+  .connector-line::after {
+    content: ''; position: absolute; bottom: -4px; left: -3px;
+    width: 0; height: 0;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+  .connectors-3 { padding: 0 60px; }
+
+  /* ── Node styles ── */
+  .node {
+    border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    transition: all 0.15s ease; border: 1px solid transparent; position: relative;
+  }
+  .node:hover { transform: translateY(-1px); }
+  .node.active { transform: translateY(-1px); }
+  .node-title { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: -0.01em; }
+  .node-sub { font-size: 11px; font-weight: 300; margin-top: 2px; opacity: 0.7; }
+
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd); }
+  .node-gray   .node-title { color: var(--gray); }
+  .node-gray:hover, .node-gray.active { border-color: var(--gray); background: #1e2a38; }
+
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .node-purple .node-title { color: var(--purple); }
+  .node-purple:hover, .node-purple.active { border-color: var(--purple); background: #251f48; }
+
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd); }
+  .node-teal   .node-title { color: var(--teal); }
+  .node-teal:hover, .node-teal.active { border-color: var(--teal); background: #132e25; }
+
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd); }
+  .node-coral  .node-title { color: var(--coral); }
+  .node-coral:hover, .node-coral.active { border-color: var(--coral); background: #321a10; }
+
+  .node-amber  { background: #2a1e08; border-color: #5a3e10; }
+  .node-amber  .node-title { color: var(--amber); }
+  .node-amber:hover, .node-amber.active { border-color: var(--amber); background: #321f08; }
+
+  .node-green  { background: #0f2a18; border-color: #1a5030; }
+  .node-green  .node-title { color: var(--green); }
+  .node-green:hover, .node-green.active { border-color: var(--green); background: #132e1c; }
+
+  /* grid rows */
+  .row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .row-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .row-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+  /* container nodes */
+  .container-node { border-radius: 10px; padding: 14px 16px; border: 1px solid; }
+  .container-node .container-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .container-node .inner-grid { display: grid; gap: 6px; }
+  .container-node .inner-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
+  .container-node .inner-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
+
+  .container-purple { background: #160f2e; border-color: var(--purple-bd); }
+  .container-purple .container-title { color: var(--purple); }
+  .container-teal   { background: #081e16; border-color: var(--teal-bd); }
+  .container-teal   .container-title { color: var(--teal); }
+  .container-gray   { background: #101820; border-color: var(--gray-bd); }
+  .container-gray   .container-title { color: var(--gray); }
+  .container-amber  { background: #1e1408; border-color: #5a3e10; }
+  .container-amber  .container-title { color: var(--amber); }
+
+  /* loop indicator */
+  .loop-indicator {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border-radius: 6px; margin: 8px 0;
+    background: #1a1030; border: 1px dashed var(--purple-bd);
+    font-family: var(--mono); font-size: 10px; color: var(--purple);
+    letter-spacing: 0.08em;
+  }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 24px; position: sticky; top: 68px;
+  }
+  .detail-file {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.08em; margin-bottom: 12px; text-transform: uppercase;
+  }
+  .detail-title { font-size: 15px; font-weight: 500; color: #e8f0ff; margin-bottom: 4px; }
+  .detail-desc { font-size: 12px; color: var(--text2); line-height: 1.6; margin-bottom: 16px; font-weight: 300; }
+  .detail-section { margin-bottom: 14px; }
+  .detail-section-title {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .detail-item {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 12px; color: var(--text2); line-height: 1.5; margin-bottom: 4px;
+  }
+  .detail-item::before { content: '→'; color: var(--text3); flex-shrink: 0; margin-top: 1px; }
+  .detail-code {
+    font-family: var(--mono); font-size: 11px; background: var(--bg3);
+    border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px;
+    color: var(--teal); line-height: 1.6; margin-top: 6px; white-space: pre-wrap; word-break: break-all;
+  }
+  .owner-tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 3px; margin: 2px 4px 2px 0;
+  }
+  .owner-alex   { background: #10102a; color: #7070f0; border: 1px solid #20205a; }
+  .owner-morgan { background: #2a1010; color: #f07070; border: 1px solid #5a2020; }
+  .owner-jordan { background: #102a20; color: #70d0a0; border: 1px solid #205a40; }
+  .owner-sam    { background: #2a2010; color: #d0a040; border: 1px solid #5a4020; }
+  .owner-riley  { background: #10201a; color: #40d090; border: 1px solid #205040; }
+  .detail-hint  { font-size: 12px; color: var(--text3); font-style: italic; margin-top: 6px; }
+  .detail-placeholder { padding: 48px 24px; text-align: center; }
+  .detail-placeholder .icon { font-size: 32px; margin-bottom: 16px; opacity: 0.3; }
+  .detail-placeholder p { font-size: 13px; color: var(--text3); font-weight: 300; line-height: 1.6; }
+
+  /* ── Legend ── */
+  .legend {
+    max-width: 960px; margin: 32px auto 0; display: flex; gap: 24px;
+    flex-wrap: wrap; padding-top: 20px; border-top: 1px solid var(--border);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .detail-body { animation: fadeIn 0.18s ease; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">doc-qa · <span>docs/</span></div>
+    <a class="nav-link" href="week1_architecture.html">Week 1</a>
+    <a class="nav-link" href="week2_architecture.html">Week 2</a>
+    <a class="nav-link" href="week3_architecture.html">Week 3</a>
+    <a class="nav-link active" href="week4_architecture.html">Week 4</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link ci" href="cicd_pipeline.html">CI/CD</a>
+  </div>
+</nav>
+
+<div class="header" style="padding: 0 24px 24px;">
+  <div style="max-width: 960px; margin: 0 auto; padding-top: 40px;">
+    <div class="header-meta">Phase 2 · Week 4 · Tool Use, Function Calling & RAG Basics</div>
+    <h1>Week 4 — <span>Tool Use & RAG</span> Architecture</h1>
+    <div class="header-sub">
+      Tool execution loop · Registry pattern · Chroma vector store · 101 chunks · 3 tools · 38 tests
+      <span class="badge badge-new">NEW · lab4/</span>
+      <span class="badge badge-extends">EXTENDS · config.py</span>
+    </div>
+  </div>
+</div>
+
+<div class="main" style="padding: 0 24px;">
+
+  <!-- LEFT: Diagram -->
+  <div class="diagram-panel">
+
+    <!-- User input -->
+    <div class="layer-label">User turn</div>
+    <div class="layer">
+      <div class="node node-gray" onclick="show('user')">
+        <div class="node-title">User message</div>
+        <div class="node-sub">Natural language — unchanged from Week 3</div>
+      </div>
+    </div>
+
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- chatbot.py -->
+    <div class="layer-label">Orchestrator</div>
+    <div class="layer">
+      <div class="node node-purple" onclick="show('chatbot')">
+        <div class="node-title">chatbot.py</div>
+        <div class="node-sub">run_tool_loop() · slash commands · token gate</div>
+      </div>
+    </div>
+
+    <div class="connectors connectors-3">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- config.py + MessageHistory + TokenTracker (unchanged) -->
+    <div class="layer-label">Week 3 foundation — untouched</div>
+    <div class="layer row-3">
+      <div class="node node-gray" onclick="show('config')">
+        <div class="node-title">config.py</div>
+        <div class="node-sub">+tools= param</div>
+      </div>
+      <div class="node node-gray" onclick="show('history')">
+        <div class="node-title">MessageHistory</div>
+        <div class="node-sub">Unchanged</div>
+      </div>
+      <div class="node node-gray" onclick="show('tracker')">
+        <div class="node-title">TokenTracker</div>
+        <div class="node-sub">Unchanged</div>
+      </div>
+    </div>
+
+    <div class="connectors connectors-3">
+      <div class="connector-line"></div>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- Tool loop -->
+    <div class="layer-label">Tool execution loop (new Week 4)</div>
+    <div class="loop-indicator">↻ loops until stop_reason == "end_turn"</div>
+    <div class="layer">
+      <div class="container-node container-purple" onclick="show('registry')">
+        <div class="container-title">registry.py — single source of truth</div>
+        <div class="inner-grid cols-3">
+          <div class="node node-teal" onclick="event.stopPropagation(); show('weather')">
+            <div class="node-title">get_weather</div>
+            <div class="node-sub">Simulated · seeded RNG</div>
+          </div>
+          <div class="node node-teal" onclick="event.stopPropagation(); show('reminder')">
+            <div class="node-title">create_reminder</div>
+            <div class="node-sub">In-memory store</div>
+          </div>
+          <div class="node node-amber" onclick="event.stopPropagation(); show('searchdocs')">
+            <div class="node-title">search_docs</div>
+            <div class="node-sub">RAG retriever</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- RAG stack -->
+    <div class="layer-label">RAG stack (new Week 4) — Riley Okafor</div>
+    <div class="layer">
+      <div class="container-node container-teal" onclick="show('rag')">
+        <div class="container-title">lab4/rag/</div>
+        <div class="inner-grid cols-4">
+          <div class="node node-teal" onclick="event.stopPropagation(); show('retriever')">
+            <div class="node-title">retriever.py</div>
+            <div class="node-sub">Tool fn</div>
+          </div>
+          <div class="node node-teal" onclick="event.stopPropagation(); show('store')">
+            <div class="node-title">store.py</div>
+            <div class="node-sub">Chroma wrapper</div>
+          </div>
+          <div class="node node-teal" onclick="event.stopPropagation(); show('embedder')">
+            <div class="node-title">embedder.py</div>
+            <div class="node-sub">Local / prod</div>
+          </div>
+          <div class="node node-teal" onclick="event.stopPropagation(); show('loader')">
+            <div class="node-title">loader.py</div>
+            <div class="node-sub">20 docs · 101 chunks</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- Vector store + docs -->
+    <div class="layer-label">Persistence</div>
+    <div class="layer row-2">
+      <div class="node node-green" onclick="show('chroma')">
+        <div class="node-title">Chroma (local)</div>
+        <div class="node-sub">./chroma_db · 101 chunks · cosine similarity</div>
+      </div>
+      <div class="node node-gray" onclick="show('docs')">
+        <div class="node-title">data/docs/</div>
+        <div class="node-sub">20 .txt files · paragraph chunking</div>
+      </div>
+    </div>
+
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- Final response -->
+    <div class="layer">
+      <div class="node node-purple" onclick="show('response')">
+        <div class="node-title">Final text response</div>
+        <div class="node-sub">stop_reason == "end_turn" · grounded in retrieved context</div>
+      </div>
+    </div>
+
+  </div><!-- /diagram-panel -->
+
+  <!-- RIGHT: Detail panel -->
+  <div class="detail-panel" id="detail">
+    <div class="detail-placeholder">
+      <div class="icon">⬡</div>
+      <p>Click any component<br>to see implementation details,<br>design decisions, and team sign-offs.</p>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<div class="legend" style="padding-left: 24px; padding-right: 24px;">
+  <div class="legend-item"><div class="legend-dot" style="background:#3d3580"></div>Orchestrator / config</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a5040"></div>New Week 4 — tools &amp; RAG</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a3548"></div>Week 3 foundation — unchanged</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a5030"></div>Persistence layer</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#5a3e10"></div>RAG tool (search_docs)</div>
+</div>
+
+<script>
+const details = {
+  user: {
+    file: 'user input',
+    title: 'User message',
+    desc: 'Natural language input. No changes from Week 3. The tools= parameter is passed separately to the API — not embedded in the message. The model sees both the message and the tool schemas and decides whether to call a tool or respond directly.',
+    sections: [
+      { title: 'Key insight', items: ['Tool awareness is in the tools= parameter, not the user message', 'stop_reason drives the loop: "tool_use" → execute, "end_turn" → done', 'Model may call multiple tools in one response — loop handles all of them'] },
+    ],
+    owners: []
+  },
+  chatbot: {
+    file: 'lab4/chatbot.py',
+    title: 'chatbot.py — Week 4 orchestrator',
+    desc: 'Week 3 chatbot shell extended with run_tool_loop(). MessageHistory, TokenTracker, and Summarizer are imported unchanged. New: tool loop, /reminders command, tools= wired into every API call.',
+    sections: [
+      { title: 'What changed from Week 3', items: ['run_tool_loop() wraps every API call', 'get_tool_schemas() feeds tools= parameter', 'dispatch() executes tool calls from registry', '/reminders command shows session reminders'] },
+      { title: 'What did NOT change', items: ['MessageHistory — untouched', 'TokenTracker — untouched', 'Summarizer — untouched', 'config.py ENVIRONMENT switch — untouched'] },
+    ],
+    code: '# Only two registry imports needed\nfrom lab4.tools.registry import get_tool_schemas, dispatch\n\n# Tool loop exits when model is done\nwhile True:\n    response = config.make_call_messages(\n        tools=get_tool_schemas(), ...)\n    if response.stop_reason == "end_turn":\n        return _extract_text(response)\n    if response.stop_reason == "tool_use":\n        # execute all tool_use blocks\n        # append tool_result as user turn\n        # loop again',
+    owners: [{ name: 'Alex', cls: 'owner-alex' }, { name: 'Sam', cls: 'owner-sam' }]
+  },
+  config: {
+    file: 'config.py',
+    title: 'config.py — Week 4 extension',
+    desc: 'One change: make_call_messages() now accepts an optional tools= parameter. When tools is provided and ENVIRONMENT=production, the raw Anthropic SDK response is returned so tool_use content blocks are preserved. Without tools, returns _Response as before — fully backward compatible.',
+    sections: [
+      { title: 'Backward compatibility', items: ['All Week 1–3 callers unaffected — tools defaults to None', '_Response returned when tools=None (same as before)', 'Raw SDK response only when tools are present and in production'] },
+      { title: 'Local mode note', items: ['Ollama does not support Anthropic tool use protocol', 'Tool calls only work with ENVIRONMENT=production', 'Local mode returns _Response — use prod for tool testing'] },
+    ],
+    code: 'def make_call_messages(\n    messages, system="", temperature=0.0,\n    max_tokens=1024,\n    tools=None   # ← new parameter\n):\n    if ENVIRONMENT == "local":\n        return _call_ollama_messages(...)\n    return _call_anthropic_messages(\n        ..., tools=tools)',
+    owners: [{ name: 'Alex', cls: 'owner-alex' }]
+  },
+  history: {
+    file: 'lab3/message_history.py',
+    title: 'MessageHistory — unchanged',
+    desc: 'Unchanged from Week 3. The tool loop appends assistant tool_use blocks and user tool_result blocks directly to the messages list — MessageHistory is not aware of tool use, nor does it need to be.',
+    sections: [],
+    owners: []
+  },
+  tracker: {
+    file: 'lab3/token_tracker.py',
+    title: 'TokenTracker — unchanged',
+    desc: 'Unchanged from Week 3. log_turn() is called on every iteration of the tool loop, including intermediate tool calls. 6 turns in the live session produced 7,678 input tokens and $0.0314 total cost.',
+    sections: [
+      { title: 'Live session stats', items: ['6 turns including tool calls', '7,678 input tokens · 557 output tokens', '$0.0314 total — tool loops add input cost per iteration'] },
+    ],
+    owners: []
+  },
+  registry: {
+    file: 'lab4/tools/registry.py',
+    title: 'registry.py — single source of truth',
+    desc: 'The central registry maps tool names to both their schema and callable. Two public functions: get_tool_schemas() for the API call, dispatch() for execution. Adding a new tool means one REGISTRY entry — chatbot.py is untouched.',
+    sections: [
+      { title: 'Public interface', items: ['get_tool_schemas() → list[dict] for tools= parameter', 'dispatch(name, input) → JSON string, always, never raises'] },
+      { title: 'Security — allowlist', items: ['dispatch() validates tool_name against REGISTRY keys first', 'Unknown names rejected before any fn call — never executed', 'Prevents hallucinated tool names from being executed'] },
+      { title: 'MCP portability', items: ['REGISTRY dict is identical to what an MCP server contains', 'list_tools() replaces get_tool_schemas() in Week 7', 'call_tool() replaces dispatch() — same logic, different transport'] },
+    ],
+    code: 'REGISTRY = {\n  "get_weather": { "schema": {...}, "fn": get_weather },\n  "create_reminder": { "schema": {...}, "fn": create_reminder },\n  "search_docs": { "schema": {...}, "fn": search_docs },\n}\n\ndef dispatch(tool_name, tool_input) -> str:\n    if tool_name not in REGISTRY:  # allowlist\n        return json.dumps({"error": True, ...})\n    return json.dumps(REGISTRY[tool_name]["fn"](**tool_input))',
+    owners: [{ name: 'Alex', cls: 'owner-alex' }, { name: 'Morgan', cls: 'owner-morgan' }]
+  },
+  weather: {
+    file: 'lab4/tools/weather.py',
+    title: 'get_weather(location)',
+    desc: 'Simulated weather tool. Deterministic output seeded on city name — same city always returns same result within a session, making tests stable. Production swap: replace _fetch_weather() with a real HTTP call; validation and return shape unchanged.',
+    sections: [
+      { title: "Morgan's four checks", items: ['Type check — model could send wrong type despite schema', 'Empty/whitespace check', 'Length bound — max 200 chars', 'No shell/SQL/path interpolation — parameterised requests only'] },
+      { title: 'Contract', items: ['Never raises — errors returned as {"error": True, "message": str}', 'Deterministic: random.Random(location.lower()) seeds RNG', 'Production swap point: _fetch_weather() only'] },
+    ],
+    owners: [{ name: 'Morgan', cls: 'owner-morgan' }, { name: 'Sam', cls: 'owner-sam' }]
+  },
+  reminder: {
+    file: 'lab4/tools/reminder.py',
+    title: 'create_reminder(text, time)',
+    desc: 'In-memory reminder store. Reminders persist for the session and are viewable via /reminders. Production swap: replace _store_reminder() with Firestore write.',
+    sections: [
+      { title: 'Validation', items: ['Type checks on both text and time', 'Empty/whitespace check on both', 'Length bounds: text ≤ 500 chars, time ≤ 200 chars'] },
+      { title: 'Contract', items: ['Returns {"error": False, "id": str, "text": str, "time": str, "created_at": str}', 'IDs are uuid4()[:8] — unique per session', 'clear_reminders() available for test isolation'] },
+    ],
+    owners: [{ name: 'Morgan', cls: 'owner-morgan' }]
+  },
+  searchdocs: {
+    file: 'lab4/rag/retriever.py',
+    title: 'search_docs(query, limit)',
+    desc: 'The RAG tool that connects the tool layer to the vector store. Validates the query, calls store.search(), and formats results as a numbered list for prompt injection. The only RAG file that registry.py imports.',
+    sections: [
+      { title: 'Prompt format', items: ['Numbered results: [1] source: filename.txt', 'Model instructed in system prompt to cite sources', 'Grounded answer verified in live session: cited refund_policy.txt by name'] },
+      { title: 'Validation', items: ['Type check, empty check, length bound (max 1000 chars)', 'Empty collection returns no-results message — not an error'] },
+    ],
+    code: '# Format returned to model\n"[1] source: refund_policy.txt\nWe offer a 30-day money-back...\n\n[2] source: billing_and_payments.txt\n..."',
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  rag: {
+    file: 'lab4/rag/',
+    title: 'RAG stack — Riley Okafor',
+    desc: 'Four-file RAG implementation. embedder.py handles the local/production split. store.py wraps Chroma. loader.py chunks and indexes documents. retriever.py is the tool function.',
+    sections: [
+      { title: 'Two pipeline stages', items: ['Indexing (offline, once): load → chunk → embed → upsert to Chroma', 'Query (per request): embed query → cosine search → format → inject into prompt'] },
+      { title: "Riley's key rule", items: ['Embed model at index time MUST match embed model at query time', 'Different models = incompatible vector spaces = meaningless similarity scores', 'Collection name encodes the model name to prevent silent mismatch'] },
+    ],
+    owners: [{ name: 'Riley', cls: 'owner-riley' }, { name: 'Alex', cls: 'owner-alex' }]
+  },
+  retriever: {
+    file: 'lab4/rag/retriever.py',
+    title: 'retriever.py',
+    desc: 'search_docs() tool function. The only public entry point from the tool layer into the RAG stack. Formats search results as a numbered prompt-ready string.',
+    sections: [],
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  store: {
+    file: 'lab4/rag/store.py',
+    title: 'store.py — Chroma wrapper',
+    desc: 'Two public functions: add_docs() for indexing, search() for retrieval. Persistent Chroma client — collection survives process restarts. Collection name includes embed model name to prevent silent model mismatch.',
+    sections: [
+      { title: 'Design decisions', items: ['Cosine similarity (hnsw:space=cosine)', 'Deterministic IDs: "filename::chunk_N" — idempotent re-indexing', 'search() clamps limit to [1, 10] — no unbounded queries'] },
+    ],
+    code: 'COLLECTION_NAME = f"docs_{get_model_name()...}"\n# local:  docs_nomic_embed_text\n# prod:   docs_text_embedding_3_large',
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  embedder: {
+    file: 'lab4/rag/embedder.py',
+    title: 'embedder.py — local/prod split',
+    desc: 'Single public function: embed(text) → list[float]. Routes to nomic-embed-text via Ollama locally or text-embedding-3-large via OpenAI in production. The ENVIRONMENT variable governs which — same pattern as config.py.',
+    sections: [
+      { title: 'Local vs production', items: ['Local: nomic-embed-text via Ollama — zero cost', 'Production: text-embedding-3-large via OpenAI API', 'Both keys pulled from GCP Secret Manager via run_prod.sh'] },
+      { title: 'Critical rule', items: ['Index and query must use identical model', 'Changing EMBED_MODEL requires re-indexing all documents'] },
+    ],
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  loader: {
+    file: 'lab4/rag/loader.py',
+    title: 'loader.py — document indexer',
+    desc: 'Loads all .txt files from lab4/data/docs/, chunks them at paragraph boundaries, and indexes via store.add_docs(). Run once before starting the chatbot. Idempotent — Chroma upserts by ID.',
+    sections: [
+      { title: "Riley's chunking strategy", items: ['Chunk at paragraph boundaries (double newline) — not fixed char count', 'Min chunk: 50 chars — skips near-empty paragraphs', 'Max chunk: 1500 chars — splits oversized paragraphs at sentence boundary', '20 docs → 101 chunks (avg 5 per doc)'] },
+      { title: 'Why paragraph chunking', items: ['Fixed-size chunking splits sentences mid-thought', 'Paragraph = one semantic unit — retrieval accuracy 20-40% better', 'Sentence-boundary fallback preserves meaning for long paragraphs'] },
+    ],
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  chroma: {
+    file: 'chroma_db/ (local)',
+    title: 'Chroma vector store',
+    desc: 'Persistent local Chroma database. 101 chunks indexed with text-embedding-3-large embeddings in production. Cosine similarity search. In .gitignore — not committed.',
+    sections: [
+      { title: 'Live session', items: ['20 documents · 101 chunks · production embeddings', 'search("refund policy") → refund_policy.txt on first query', 'Collection: docs_text_embedding_3_large'] },
+      { title: 'Production path', items: ['Local: ./chroma_db (relative to project root)', 'Production: Pinecone (see stack guide Week 4)', 'CHROMA_PATH env var overrides default path'] },
+    ],
+    owners: [{ name: 'Riley', cls: 'owner-riley' }]
+  },
+  docs: {
+    file: 'lab4/data/docs/',
+    title: '20 knowledge base documents',
+    desc: '20 plain-text documents covering a simulated SaaS platform knowledge base. Topics include billing, refunds, API auth, team management, security, integrations, and more.',
+    sections: [
+      { title: 'Documents', items: ['getting_started, billing_and_payments, refund_policy', 'api_authentication, data_export, password_reset', 'team_management, integrations, storage_and_limits', 'two_factor_auth, webhooks, search_features', 'notifications, mobile_app, data_privacy', 'keyboard_shortcuts, version_history, uptime_and_sla', 'support_channels, custom_domains'] },
+    ],
+    owners: []
+  },
+  response: {
+    file: 'final output',
+    title: 'Final text response',
+    desc: 'Returned when stop_reason == "end_turn". For RAG queries, the model cites the source document by name — "Based on refund_policy.txt..." — because the retriever formats results with source attribution and the system prompt instructs citation.',
+    sections: [
+      { title: 'Live session examples', items: ['get_weather("Detroit") → 67°F, windy, 69% humidity', 'create_reminder → "Review the PR, tomorrow at 10am"', 'search_docs("refund policy") → cited refund_policy.txt, 30-day window, proration details'] },
+    ],
+    owners: []
+  },
+};
+
+function show(key) {
+  const d = details[key];
+  if (!d) return;
+  document.querySelectorAll('.node, .container-node').forEach(n => n.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  let html = `<div class="detail-body">
+    <div class="detail-file">${d.file}</div>
+    <div class="detail-title">${d.title}</div>
+    <div class="detail-desc">${d.desc}</div>`;
+  d.sections.forEach(s => {
+    html += `<div class="detail-section">
+      <div class="detail-section-title">${s.title}</div>`;
+    s.items.forEach(i => { html += `<div class="detail-item">${i}</div>`; });
+    html += `</div>`;
+  });
+  if (d.code) html += `<div class="detail-code">${d.code}</div>`;
+  if (d.owners.length) {
+    html += `<div style="margin-top:14px;">`;
+    d.owners.forEach(o => { html += `<span class="owner-tag ${o.cls}">${o.name}</span>`; });
+    html += `</div>`;
+  }
+  html += `</div>`;
+  document.getElementById('detail').innerHTML = html;
+}
+</script>
+</body>
+</html>
