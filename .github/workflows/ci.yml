@@ -12,6 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # ── Python (labs 1-4) ──────────────────────────────────────
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -26,5 +27,21 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
-      - name: Unit tests
+      - name: Python unit tests
         run: uv run pytest -m "not integration and not eval" --tb=short
+
+      # ── Node (lab5) ────────────────────────────────────────────
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: lab5/package-lock.json
+
+      - name: Install lab5 dependencies
+        run: npm ci
+        working-directory: lab5
+
+      - name: Lab5 unit tests
+        run: npm test
+        working-directory: lab5
