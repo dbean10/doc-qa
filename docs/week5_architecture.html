@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 5 — AI Web App Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a3e10;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+    overflow-x: auto;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-link:hover { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  .nav-link.active { background: var(--teal-bg); border-color: var(--teal-bd); color: var(--teal); }
+  .nav-link.ext { margin-left: auto; color: var(--amber); border-color: var(--amber-bd); background: var(--amber-bg); }
+  .nav-link.ext:hover { border-color: var(--amber); }
+  .nav-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+  /* ── Header ── */
+  .header {
+    max-width: 960px;
+    margin: 40px auto 32px;
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 { font-size: 26px; font-weight: 500; color: #e8f0ff; letter-spacing: -0.02em; }
+  .header h1 span { color: var(--teal); }
+  .header-sub { margin-top: 8px; font-size: 13px; color: var(--text2); font-weight: 300; }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 2px 8px; border-radius: 3px; margin-left: 10px; vertical-align: middle;
+  }
+  .badge-new  { background: var(--teal-bg);   color: var(--teal);   border: 1px solid var(--teal-bd); }
+  .badge-prev { background: var(--gray-bg);   color: var(--gray);   border: 1px solid var(--gray-bd); }
+  .badge-live { background: var(--green-bg);  color: var(--green);  border: 1px solid var(--green-bd); }
+
+  /* ── Layout ── */
+  .main {
+    max-width: 960px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 28px;
+    align-items: start;
+    padding: 0 0 0 0;
+  }
+
+  /* ── Diagram panel ── */
+  .diagram-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+  .layer-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; padding-left: 2px;
+  }
+  .layer { margin-bottom: 8px; }
+  .row-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .row-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+
+  .connectors {
+    display: flex; justify-content: space-around; padding: 0 20px;
+    height: 28px; align-items: center;
+  }
+  .connector-line {
+    width: 1px; height: 28px; background: var(--border2); position: relative;
+  }
+  .connector-line::after {
+    content: ''; position: absolute; bottom: -4px; left: -3px;
+    width: 0; height: 0;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+  .connector-label {
+    font-family: var(--mono); font-size: 9px; color: var(--text3);
+    text-align: center; margin: 2px 0 4px; letter-spacing: 0.06em;
+  }
+
+  /* ── Node styles ── */
+  .node {
+    border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    transition: all 0.15s ease; border: 1px solid transparent; position: relative;
+  }
+  .node:hover { transform: translateY(-1px); }
+  .node.active { transform: translateY(-1px); }
+  .node-title { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: -0.01em; }
+  .node-sub   { font-size: 11px; font-weight: 300; margin-top: 2px; opacity: 0.7; }
+
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd); }
+  .node-gray   .node-title { color: var(--gray); }
+  .node-gray:hover, .node-gray.active { border-color: var(--gray); background: #1e2a38; }
+
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .node-purple .node-title { color: var(--purple); }
+  .node-purple:hover, .node-purple.active { border-color: var(--purple); background: #251f48; }
+
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd); }
+  .node-teal   .node-title { color: var(--teal); }
+  .node-teal:hover, .node-teal.active { border-color: var(--teal); background: #132e25; }
+
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd); }
+  .node-coral  .node-title { color: var(--coral); }
+  .node-coral:hover, .node-coral.active { border-color: var(--coral); background: #321a10; }
+
+  .node-amber  { background: var(--amber-bg);  border-color: var(--amber-bd); }
+  .node-amber  .node-title { color: var(--amber); }
+  .node-amber:hover, .node-amber.active { border-color: var(--amber); background: #321f08; }
+
+  .node-green  { background: var(--green-bg);  border-color: var(--green-bd); }
+  .node-green  .node-title { color: var(--green); }
+  .node-green:hover, .node-green.active { border-color: var(--green); background: #132e1c; }
+
+  /* container nodes */
+  .container-node {
+    border-radius: 10px; padding: 14px 16px; border: 1px solid; margin-bottom: 8px;
+  }
+  .container-node .container-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; cursor: pointer;
+  }
+  .container-node .inner-grid { display: grid; gap: 6px; }
+  .container-node .inner-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
+  .container-node .inner-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
+  .container-node .inner-grid.cols-4 { grid-template-columns: repeat(4,1fr); }
+
+  .cn-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .cn-teal   .container-title { color: var(--teal); }
+  .cn-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .cn-purple .container-title { color: var(--purple); }
+  .cn-gray   { background: var(--gray-bg);   border-color: var(--gray-bd);   }
+  .cn-gray   .container-title { color: var(--gray); }
+  .cn-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .cn-coral  .container-title { color: var(--coral); }
+
+  /* user node */
+  .user-row { display: flex; justify-content: center; }
+  .user-node {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--gray-bg); border: 1px solid var(--gray-bd);
+    border-radius: 8px; padding: 10px 24px; cursor: pointer; transition: all 0.15s;
+  }
+  .user-node:hover { border-color: var(--gray); background: #1e2a38; }
+  .user-node .node-title { color: var(--gray); font-family: var(--mono); font-size: 12px; font-weight: 600; }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    position: sticky; top: 60px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; min-height: 400px;
+  }
+  .detail-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 400px; gap: 12px; color: var(--text3);
+  }
+  .detail-placeholder .icon { font-size: 32px; opacity: 0.4; }
+  .detail-placeholder p { font-size: 12px; text-align: center; line-height: 1.6; font-weight: 300; }
+  #detail-content { display: none; animation: fadeIn 0.18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .detail-header { padding: 16px 20px 14px; border-bottom: 1px solid var(--border); }
+  .detail-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .detail-title { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .detail-subtitle { font-size: 12px; color: var(--text2); font-weight: 300; margin-top: 4px; }
+  .detail-body { padding: 18px 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-section-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .detail-desc { font-size: 13px; color: var(--text); line-height: 1.65; font-weight: 300; }
+  .detail-code {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-family: var(--mono); font-size: 11px; color: #a8c0e0;
+    line-height: 1.7; white-space: pre; overflow-x: auto;
+  }
+  .detail-code .kw  { color: var(--purple); }
+  .detail-code .fn  { color: var(--teal); }
+  .detail-code .st  { color: var(--amber); }
+  .detail-code .cm  { color: var(--text3); }
+  .detail-code .co  { color: var(--coral); }
+  .detail-rules { list-style: none; }
+  .detail-rules li {
+    font-size: 12px; color: var(--text2); padding: 5px 0;
+    border-bottom: 1px solid var(--border); font-weight: 300;
+    display: flex; gap: 8px; align-items: baseline; line-height: 1.5;
+  }
+  .detail-rules li:last-child { border-bottom: none; }
+  .detail-rules li::before { content: '→'; color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 11px; }
+
+  .owner-tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 1px 7px; border-radius: 3px; margin-right: 6px;
+  }
+  .owner-alex   { background: #1a2a3a; color: #60a0d0; border: 1px solid #2a4060; }
+  .owner-morgan { background: #2a1818; color: #d07070; border: 1px solid #4a2828; }
+  .owner-jordan { background: #1a2a1a; color: #60c060; border: 1px solid #2a4a2a; }
+  .owner-casey  { background: #2a1a2a; color: #c060c0; border: 1px solid #4a2a4a; }
+  .owner-sam    { background: #1a2218; color: #80c050; border: 1px solid #2a4020; }
+
+  /* ── Legend ── */
+  .legend {
+    max-width: 960px; margin: 32px auto 0;
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 16px 24px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 12px; color: var(--text2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .page { padding: 0 24px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-brand">doc-qa · <span>dbean10</span></span>
+    <a class="nav-link" href="week1_architecture.html">W1</a>
+    <a class="nav-link" href="week2_architecture.html">W2</a>
+    <a class="nav-link" href="week3_architecture.html">W3</a>
+    <a class="nav-link" href="week4_architecture.html">W4</a>
+    <a class="nav-link active" href="week5_architecture.html">W5</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="cicd_pipeline.html">CI/CD</a>
+    <a class="nav-link ext" href="https://lab5-nine-pi.vercel.app" target="_blank">↗ live app</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-meta">Phase 3 — Building AI-Powered Web Apps · Week 5 · March 2026</div>
+  <h1>AI Web App Architecture <span>— click any component</span></h1>
+  <div class="header-sub">Next.js 14 + shadcn/ui + Vercel · dbean10/doc-qa · lab5/</div>
+</div>
+
+<!-- Main grid -->
+<div class="main">
+
+  <!-- ── LEFT: Diagram ── -->
+  <div class="diagram-panel">
+
+    <!-- Browser layer -->
+    <div class="layer-label">browser — React (Vercel CDN)</div>
+    <div class="container-node cn-teal" style="cursor:default">
+      <div class="container-title" onclick="show('browser')">React frontend — src/app/ + src/components/</div>
+      <div class="inner-grid cols-2">
+        <div class="node node-teal" onclick="event.stopPropagation(); show('page')">
+          <div class="node-title">page.tsx</div>
+          <div class="node-sub">root · layout + ChatWindow</div>
+        </div>
+        <div class="node node-teal" onclick="event.stopPropagation(); show('chatwindow')">
+          <div class="node-title">ChatWindow.tsx</div>
+          <div class="node-sub">ScrollArea · auto-scroll</div>
+        </div>
+        <div class="node node-teal" onclick="event.stopPropagation(); show('messagebubble')">
+          <div class="node-title">MessageBubble.tsx</div>
+          <div class="node-sub">streaming · complete · error</div>
+        </div>
+        <div class="node node-teal" onclick="event.stopPropagation(); show('inputbar')">
+          <div class="node-title">InputBar.tsx</div>
+          <div class="node-sub">Send / Stop · Enter to send</div>
+        </div>
+        <div class="node node-teal" onclick="event.stopPropagation(); show('thinkingindicator')">
+          <div class="node-title">ThinkingIndicator.tsx</div>
+          <div class="node-sub">shadcn Skeleton · 3 lines</div>
+        </div>
+        <div class="node node-teal" onclick="event.stopPropagation(); show('usechat')">
+          <div class="node-title">useChat.ts</div>
+          <div class="node-sub">SSE reader · state · abort</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-label">POST /api/chat · SSE stream back</div>
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- Next.js server layer -->
+    <div class="layer-label">Next.js server — API route (Edge runtime)</div>
+    <div class="container-node cn-purple" style="cursor:default">
+      <div class="container-title" onclick="show('apiserver')">src/app/api/chat/ · src/lib/</div>
+      <div class="inner-grid cols-3">
+        <div class="node node-purple" onclick="event.stopPropagation(); show('route')">
+          <div class="node-title">route.ts</div>
+          <div class="node-sub">POST handler · SSE stream</div>
+        </div>
+        <div class="node node-purple" onclick="event.stopPropagation(); show('sanitize')">
+          <div class="node-title">sanitize.ts</div>
+          <div class="node-sub">validate · scrub · limit</div>
+        </div>
+        <div class="node node-purple" onclick="event.stopPropagation(); show('sanitizetest')">
+          <div class="node-title">sanitize.test.ts</div>
+          <div class="node-sub">20 Jest tests · 0.21s</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector-label">anthropic.messages.stream()</div>
+    <div class="connectors"><div class="connector-line"></div></div>
+
+    <!-- Anthropic layer -->
+    <div class="layer-label">Anthropic API</div>
+    <div class="layer">
+      <div class="node node-coral" onclick="show('claude')" style="text-align:center">
+        <div class="node-title">claude-sonnet-4-6</div>
+        <div class="node-sub">max_tokens: 1024 · system prompt: writing assistant</div>
+      </div>
+    </div>
+
+    <div style="height: 16px;"></div>
+
+    <!-- Week 4 unchanged -->
+    <div class="layer-label">Week 1–4 Python backend — Cloud Run (unchanged)</div>
+    <div class="container-node cn-gray" style="cursor:default">
+      <div class="container-title">lab4/ — tool loop + RAG</div>
+      <div class="inner-grid cols-3">
+        <div class="node node-gray" onclick="event.stopPropagation(); show('chatbotpy')">
+          <div class="node-title">chatbot.py</div>
+          <div class="node-sub">tool loop · RAG</div>
+        </div>
+        <div class="node node-gray" onclick="event.stopPropagation(); show('registry')">
+          <div class="node-title">tools/registry.py</div>
+          <div class="node-sub">dispatch pattern</div>
+        </div>
+        <div class="node node-gray" onclick="event.stopPropagation(); show('ragstack')">
+          <div class="node-title">rag/</div>
+          <div class="node-sub">Chroma · embedder</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /diagram-panel -->
+
+  <!-- ── RIGHT: Detail panel ── -->
+  <div class="detail-panel" id="detail">
+    <div class="detail-placeholder" id="detail-placeholder">
+      <div class="icon">⬡</div>
+      <p>Click any component<br>to see implementation details,<br>design decisions, and team sign-offs.</p>
+    </div>
+    <div id="detail-content"></div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1D9E75"></div>New Week 5 — React frontend</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#3d3580"></div>New Week 5 — Next.js server</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#6a3020"></div>Anthropic API</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2a3548"></div>Weeks 1–4 — unchanged</div>
+</div>
+
+</div><!-- /page -->
+
+<script>
+const DATA = {
+  browser: {
+    tag: 'lab5/src/ — browser layer',
+    title: 'React frontend',
+    color: 'var(--teal)',
+    subtitle: 'Next.js 14 App Router · shadcn/ui · Tailwind v3',
+    desc: 'The browser layer is pure React — no server-side AI logic. It renders messages, manages streaming state via the useChat hook, and sends fetch requests to /api/chat. The shadcn/ui component library (ScrollArea, Skeleton, Badge, Textarea, Button) provides the building blocks. All AI logic stays on the server.',
+    code: `<span class="cm"># Component ownership</span>
+ChatWindow  → assembles the chat UI
+MessageBubble → renders per-message (all states)
+InputBar    → textarea + send/stop button
+ThinkingIndicator → shadcn Skeleton (3 lines)
+useChat     → all client-side AI state`,
+    rules: [
+      'User content never parsed as markdown — plain whitespace-pre-wrap only',
+      'Assistant content rendered via ReactMarkdown (bold, lists, code)',
+      'All AI state: streaming / complete / error — drives render branch',
+      'AbortController on every fetch — Stop button cancels mid-stream',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'AI state vocabulary designed before implementation' }]
+  },
+
+  page: {
+    tag: 'src/app/page.tsx',
+    title: 'page.tsx',
+    color: 'var(--teal)',
+    subtitle: 'Root page — layout + ChatWindow mount',
+    desc: 'The root page. Sets max-width container, sticky header with title and model attribution, mounts ChatWindow into a flex-1 overflow-hidden div so the chat takes the remaining viewport height.',
+    code: `<span class="kw">export default function</span> <span class="fn">Home</span>() {
+  <span class="kw">return</span> (
+    &lt;main <span class="st">className</span>=<span class="st">"flex flex-col h-screen max-w-3xl mx-auto"</span>&gt;
+      &lt;header&gt;AI Writing Assistant&lt;/header&gt;
+      &lt;div <span class="st">className</span>=<span class="st">"flex-1 overflow-hidden"</span>&gt;
+        &lt;<span class="fn">ChatWindow</span> /&gt;
+      &lt;/div&gt;
+    &lt;/main&gt;
+  )
+}`,
+    rules: [
+      'h-screen on main — full viewport height, no scroll on outer page',
+      'flex-1 overflow-hidden on wrapper — forces ChatWindow to constrain height',
+      'max-w-3xl mx-auto — centered, readable width',
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Layout verified locally and on production URL' }]
+  },
+
+  chatwindow: {
+    tag: 'src/components/chat/ChatWindow.tsx',
+    title: 'ChatWindow.tsx',
+    color: 'var(--teal)',
+    subtitle: 'ScrollArea + message list + InputBar',
+    desc: 'Assembles the three visual zones: scrollable message list, thinking indicator or empty state, and the input bar. The h-0 + flex-1 combination on ScrollArea is the key trick — without h-0, flex-1 expands with content instead of constraining it to scroll.',
+    code: `&lt;<span class="fn">ScrollArea</span> <span class="st">className</span>=<span class="st">"flex-1 h-0"</span>&gt;
+  {messages.<span class="fn">map</span>(msg =&gt; (
+    &lt;<span class="fn">MessageBubble</span> key={msg.id} message={msg} /&gt;
+  ))}
+  &lt;div ref={bottomRef} /&gt;  <span class="cm">// auto-scroll target</span>
+&lt;/<span class="fn">ScrollArea</span>&gt;
+&lt;<span class="fn">InputBar</span> onSend={sendMessage} onCancel={cancelStream} /&gt;`,
+    rules: [
+      'h-0 + flex-1 on ScrollArea — forces scroll rather than expand',
+      'useEffect on messages → scrollIntoView(smooth) — auto-scroll on new content',
+      'Empty state shown when messages.length === 0',
+      'bottomRef div at end of list is the auto-scroll target',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'Scroll fixed in post-deploy patch — PR #19 → deploy → fix → redeploy' }]
+  },
+
+  messagebubble: {
+    tag: 'src/components/chat/MessageBubble.tsx',
+    title: 'MessageBubble.tsx',
+    color: 'var(--teal)',
+    subtitle: 'Per-message renderer · all AI states',
+    desc: 'The single most important UI component. Renders differently based on role (user/assistant) and status (streaming/complete/error). User messages: right-aligned, plain text, dark bubble. Assistant messages: left-aligned, ReactMarkdown, muted background. Error: red border bubble with recovery copy. Streaming with empty content: ThinkingIndicator.',
+    code: `<span class="cm">// Status-driven render branch</span>
+<span class="kw">if</span> (isStreaming && !message.content)
+  <span class="kw">return</span> &lt;<span class="fn">ThinkingIndicator</span> /&gt;  <span class="cm">// skeleton</span>
+
+<span class="cm">// User: plain text (untrusted — never markdown)</span>
+&lt;span <span class="st">className</span>=<span class="st">"whitespace-pre-wrap"</span>&gt;{content}&lt;/span&gt;
+
+<span class="cm">// Assistant: ReactMarkdown</span>
+&lt;<span class="fn">ReactMarkdown</span>&gt;{content}&lt;/<span class="fn">ReactMarkdown</span>&gt;
+
+<span class="cm">// Streaming cursor</span>
+{isStreaming && &lt;span <span class="st">className</span>=<span class="st">"animate-pulse"</span>/&gt;}`,
+    rules: [
+      'User content → plain text only. Never ReactMarkdown on untrusted input.',
+      'ThinkingIndicator shown when streaming=true AND content is empty string',
+      'Streaming cursor: inline pulse span appended to assistant content',
+      'Error state: red background + "Your message is saved — try again" copy',
+    ],
+    owners: [
+      { label: 'Casey', cls: 'owner-casey', note: 'AI state vocabulary: thinking→streaming→complete / error' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'User content never parsed as markdown — injection boundary' }
+    ]
+  },
+
+  thinkingindicator: {
+    tag: 'src/components/chat/ThinkingIndicator.tsx',
+    title: 'ThinkingIndicator.tsx',
+    color: 'var(--teal)',
+    subtitle: 'shadcn Skeleton · 3 lines · thinking state',
+    desc: 'Three shadcn Skeleton lines of varying width (48, 64, 40). Shown when the assistant message exists in state but content is still empty — the API call was made but no tokens have arrived. Skeleton communicates spatial expectation: content is coming and here is where it will land. This reduces perceived latency versus a spinner.',
+    code: `<span class="kw">export function</span> <span class="fn">ThinkingIndicator</span>() {
+  <span class="kw">return</span> (
+    &lt;div <span class="st">className</span>=<span class="st">"flex flex-col gap-2 max-w-[80%]"</span>&gt;
+      &lt;<span class="fn">Skeleton</span> <span class="st">className</span>=<span class="st">"h-4 w-48"</span> /&gt;
+      &lt;<span class="fn">Skeleton</span> <span class="st">className</span>=<span class="st">"h-4 w-64"</span> /&gt;
+      &lt;<span class="fn">Skeleton</span> <span class="st">className</span>=<span class="st">"h-4 w-40"</span> /&gt;
+    &lt;/div&gt;
+  )
+}`,
+    rules: [
+      'Skeleton not spinner — sets spatial expectation for content location',
+      'Shown only while streaming=true AND content is empty string',
+      'Transitions to actual content as first tokens arrive (no flash)',
+      'shadcn Skeleton component — animated shimmer built in',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: '"Skeleton not spinner" — key AI UX principle' }]
+  },
+
+  inputbar: {
+    tag: 'src/components/chat/InputBar.tsx',
+    title: 'InputBar.tsx',
+    color: 'var(--teal)',
+    subtitle: 'Textarea + Send/Stop · keyboard shortcuts',
+    desc: 'The input component. Enter submits, Shift+Enter inserts newline. The Send button becomes a Stop button while isLoading=true, calling cancelStream() via AbortController. Textarea is disabled during streaming. Input clears on send and focus returns to textarea.',
+    code: `<span class="cm">// Enter sends, Shift+Enter newlines</span>
+<span class="kw">const</span> <span class="fn">handleKeyDown</span> = (e) => {
+  <span class="kw">if</span> (e.key === <span class="st">'Enter'</span> && !e.shiftKey) {
+    e.<span class="fn">preventDefault</span>()
+    <span class="fn">handleSend</span>()
+  }
+}
+
+<span class="cm">// Button toggles on isLoading</span>
+{isLoading
+  ? &lt;<span class="fn">Button</span> onClick={onCancel}&gt;Stop&lt;/&gt;
+  : &lt;<span class="fn">Button</span> onClick={handleSend}&gt;Send&lt;/&gt;}`,
+    rules: [
+      'Enter → submit. Shift+Enter → newline. Standard chat convention.',
+      'Send disabled when value.trim() is empty — prevents blank submissions',
+      'Stop button calls cancelStream() → AbortController.abort()',
+      'Textarea disabled during loading — prevents double-submit',
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Keyboard shortcuts implemented per chat convention' }]
+  },
+
+  usechat: {
+    tag: 'src/hooks/useChat.ts',
+    title: 'useChat.ts',
+    color: 'var(--teal)',
+    subtitle: 'Client state · SSE reader · abort · error',
+    desc: 'The central state hook. Manages the messages array, isLoading, and error state. On sendMessage: adds user message optimistically, adds streaming placeholder, opens fetch to /api/chat, reads SSE stream line-by-line, accumulates text_delta events into the placeholder content, marks complete on finish or error on failure.',
+    code: `<span class="cm">// Optimistic update — user message appears immediately</span>
+<span class="fn">setMessages</span>(prev => [...prev, userMsg, assistantMsg])
+
+<span class="cm">// SSE reader loop</span>
+<span class="kw">while</span> (<span class="kw">true</span>) {
+  <span class="kw">const</span> { done, value } = <span class="kw">await</span> reader.<span class="fn">read</span>()
+  <span class="kw">if</span> (done) <span class="kw">break</span>
+  <span class="cm">// parse content_block_delta events</span>
+  <span class="cm">// accumulate text into assistantMsg.content</span>
+}
+
+<span class="cm">// AbortController for Stop button</span>
+abortRef.current = <span class="kw">new</span> <span class="fn">AbortController</span>()`,
+    rules: [
+      'Optimistic update: user message + streaming placeholder added before fetch',
+      'SSE parser: splits chunks on newline, JSON.parse each line, extracts text_delta',
+      'AbortError caught separately — renders "Cancelled." not generic error',
+      'history built from messages state + new user message before each fetch',
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'SSE reader pattern — same event format as Python SDK' }]
+  },
+
+  route: {
+    tag: 'src/app/api/chat/route.ts',
+    title: 'route.ts',
+    color: 'var(--purple)',
+    subtitle: 'POST handler · validate · sanitize · stream',
+    desc: 'The API route handler. Validates message shape, sanitizes content, calls anthropic.messages.stream(), returns the ReadableStream as a Server-Sent Events response. This is the seam between the React frontend and the Anthropic API. The key architectural decision: the API key lives here on the server, never in the browser bundle.',
+    code: `<span class="kw">export async function</span> <span class="fn">POST</span>(req: NextRequest) {
+  <span class="kw">const</span> { messages } = <span class="kw">await</span> req.<span class="fn">json</span>()
+  <span class="kw">if</span> (!<span class="fn">validateMessages</span>(messages))
+    <span class="kw">return new</span> <span class="fn">Response</span>(<span class="st">"Invalid request"</span>, { status: <span class="co">400</span> })
+
+  <span class="kw">const</span> sanitized = <span class="fn">sanitizeMessages</span>(messages)
+  <span class="kw">const</span> stream = anthropic.messages.<span class="fn">stream</span>({
+    model: <span class="st">"claude-sonnet-4-6"</span>,
+    system: SYSTEM_PROMPT,
+    messages: sanitized,
+  })
+  <span class="kw">return new</span> <span class="fn">Response</span>(stream.<span class="fn">toReadableStream</span>())
+}`,
+    rules: [
+      'validateMessages() before sanitizeMessages() — reject bad shape first',
+      'ANTHROPIC_API_KEY from process.env — never in browser, never in git',
+      'stream.toReadableStream() — Anthropic SDK native SSE output',
+      'Content-Type: text/event-stream · Cache-Control: no-cache',
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Pattern 1 approved: Next.js API Route, not separate FastAPI backend' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'API key server-only. validate→sanitize order enforced.' }
+    ]
+  },
+
+  sanitize: {
+    tag: 'src/lib/sanitize.ts',
+    title: 'sanitize.ts',
+    color: 'var(--purple)',
+    subtitle: 'validateMessages · sanitizeMessages · 8 injection patterns',
+    desc: 'Two-function injection defense. validateMessages() checks shape (array, non-empty, each item has role + content string). sanitizeMessages() trims history to 20 turns, truncates content to 4000 chars, strips 8 known injection patterns. Bug found by tests: operator precedence in validateMessages allowed missing content field to pass — fixed.',
+    code: `<span class="cm">// Bug fixed: operator precedence</span>
+<span class="kw">return</span> messages.<span class="fn">every</span>(m =>
+  <span class="kw">typeof</span> m === <span class="st">"object"</span> && m !== <span class="kw">null</span> &&
+  (                            <span class="cm">// ← parens required</span>
+    m.role === <span class="st">"user"</span> ||
+    m.role === <span class="st">"assistant"</span>
+  ) &&
+  <span class="kw">typeof</span> m.content === <span class="st">"string"</span>
+)
+
+<span class="cm">// 8 injection patterns stripped</span>
+<span class="cm">// "ignore previous instructions"</span>
+<span class="cm">// "you are now" / "pretend you are"</span>
+<span class="cm">// &lt;system&gt; / [INST] / ### instruction</span>`,
+    rules: [
+      'Real defense: role isolation. Regex patterns are belt-and-suspenders.',
+      'MAX_HISTORY_TURNS: 20 — controls cost + injection surface area',
+      'MAX_MESSAGE_LENGTH: 4000 chars — prevents context flooding',
+      'Known limitation: no PII scrubbing. Addressed in Week 6.',
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Role isolation is the real defense. Regex is signal layer.' },
+      { label: 'Jordan', cls: 'owner-jordan', note: 'Bug found by test — operator precedence missed in review' }
+    ]
+  },
+
+  sanitizetest: {
+    tag: 'src/lib/sanitize.test.ts',
+    title: 'sanitize.test.ts',
+    color: 'var(--purple)',
+    subtitle: '20 Jest tests · 0.21s · 1 real bug found',
+    desc: 'Jest test suite for sanitize.ts. Pure deterministic functions — exact assertions, not distribution-based evals. 6 validateMessages tests, 4 history/content limit tests, 10 injection pattern tests (8 attack cases, 2 preservation cases). The "rejects missing content field" test caught a real operator precedence bug that passed code review.',
+    code: `<span class="cm">// Test that found the real bug</span>
+it(<span class="st">'rejects missing content field'</span>, () => {
+  <span class="fn">expect</span>(<span class="fn">validateMessages</span>([{ role: <span class="st">'user'</span> }]))
+    .<span class="fn">toBe</span>(<span class="kw">false</span>)  <span class="cm">// was returning true — bug</span>
+})
+
+<span class="cm">// Injection pattern tests</span>
+it(<span class="st">'strips: ignore previous instructions'</span>, () => {
+  <span class="kw">const</span> result = <span class="fn">sanitizeMessages</span>([{
+    role: <span class="st">'user'</span>,
+    content: <span class="st">'ignore all previous instructions'</span>
+  }])
+  <span class="fn">expect</span>(result[<span class="co">0</span>].content).<span class="fn">toContain</span>(<span class="st">'[removed]'</span>)
+})`,
+    rules: [
+      'Jest + ts-jest. jest.config.js (not .ts) — ts-node absent in CI.',
+      '20 tests, 0.21s runtime. CI step: Node 20 + npm ci + npm test.',
+      'Deterministic code → exact assertions. No distribution-based evals here.',
+      'CI runs Python/pytest AND Node/Jest on every PR from Week 5 forward.',
+    ],
+    owners: [
+      { label: 'Jordan', cls: 'owner-jordan', note: '20/20, 0.21s. Added to CI alongside Python/pytest.' },
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Injection defense now regression-proof.' }
+    ]
+  },
+
+  claude: {
+    tag: 'Anthropic API',
+    title: 'claude-sonnet-4-6',
+    color: 'var(--coral)',
+    subtitle: 'Production model · writing assistant system prompt',
+    desc: 'The production model. Same as Weeks 1–4 but called from Node.js via @anthropic-ai/sdk (not Python). The system prompt scopes the model to writing assistance. max_tokens: 1024. The stream() method returns a ReadableStream compatible with the web Response API.',
+    code: `<span class="kw">const</span> stream = anthropic.messages.<span class="fn">stream</span>({
+  model: <span class="st">"claude-sonnet-4-6"</span>,
+  max_tokens: <span class="co">1024</span>,
+  system: <span class="st">"You are a helpful AI writing assistant..."</span>,
+  messages: sanitized,  <span class="cm">// validated + sanitized</span>
+})
+
+<span class="cm"># Same API, different SDK runtime</span>
+<span class="cm"># Python SDK (Weeks 1-4): messages.stream()</span>
+<span class="cm"># Node SDK (Week 5): messages.stream()</span>
+<span class="cm"># Identical interface, different runtime</span>`,
+    rules: [
+      'Model string pinned: claude-sonnet-4-6. Never "latest".',
+      '@anthropic-ai/sdk ^0.80.0 — Node SDK, not Python SDK',
+      'stream.toReadableStream() — native SSE for web Response API',
+      'System prompt sets writing assistant persona and scope',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Same model, same pattern — different runtime. Architectural contract holds.' }]
+  },
+
+  apiserver: {
+    tag: 'lab5/src/app/api/ + src/lib/',
+    title: 'Next.js server layer',
+    color: 'var(--purple)',
+    subtitle: 'Edge runtime · API key lives here only',
+    desc: 'The server boundary. API key lives here, never reaches the browser. Pattern 1 chosen: Next.js API Route, not a separate FastAPI backend. This keeps the codebase in one repo, enables Vercel deploy without CORS configuration, and uses the same streaming patterns as Cloud Run without additional infrastructure.',
+    code: `<span class="cm"># Pattern 1: Next.js API Route (chosen)</span>
+Browser → /api/chat → Anthropic API
+<span class="cm"># One repo. One deploy command. Zero CORS.</span>
+
+<span class="cm"># Pattern 2: FastAPI + Next.js (Week 7+)</span>
+Browser → Next.js → FastAPI → Anthropic
+<span class="cm"># When Python AI logic needed. Adds CORS.</span>
+
+<span class="cm"># Pattern 3: Direct browser call (never)</span>
+Browser → Anthropic API
+<span class="cm"># API key in bundle. Disqualifying.</span>`,
+    rules: [
+      'API key: process.env.ANTHROPIC_API_KEY — Vercel env vars in prod',
+      'Local: .env.local (gitignored). Production: Vercel dashboard.',
+      'Pattern 1 approved by Alex. FastAPI path deferred to Week 7.',
+      'Python backend on Cloud Run untouched — architectural contract holds.',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Pattern decision: Next.js API Route approved. Python backend unchanged.' }]
+  },
+
+  chatbotpy: {
+    tag: 'lab4/chatbot.py',
+    title: 'chatbot.py (Week 4)',
+    color: 'var(--gray)',
+    subtitle: 'Unchanged · tool loop + RAG — Cloud Run',
+    desc: 'The Week 4 Python chatbot with tool execution loop and RAG. Not touched in Week 5. Still running on Cloud Run. The Week 5 Next.js app is a separate frontend that calls Claude directly — it does not proxy through the Python backend. These are independent deployments.',
+    code: `<span class="cm"># Week 4 — unchanged in Week 5</span>
+<span class="cm"># Still running on Cloud Run</span>
+<span class="cm"># Not connected to Week 5 Next.js frontend</span>
+
+<span class="cm"># Week 5 Next.js calls Anthropic directly</span>
+<span class="cm"># No proxy through Python backend</span>
+
+<span class="cm"># Week 7: MCP server evolution of registry pattern</span>
+<span class="cm"># That is when the two layers connect</span>`,
+    rules: [
+      'Cloud Run deployment unchanged. CI/CD pipeline unchanged.',
+      'Not connected to Week 5 frontend — independent deployment.',
+      'run_prod.sh pattern still active for local Python prod runs.',
+      'Week 7: MCP server bridges Python tools to the Next.js frontend.',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Foundation untouched. New layer on top. Pattern holds.' }]
+  },
+
+  registry: {
+    tag: 'lab4/tools/registry.py',
+    title: 'tools/registry.py (Week 4)',
+    color: 'var(--gray)',
+    subtitle: 'Registry pattern → MCP server in Week 7',
+    desc: 'The Week 4 tool registry. Unchanged. In Week 7 this becomes an MCP server — same pattern (name → schema + callable), different transport (stdio/SSE instead of in-process). The tool implementation files (weather.py, reminder.py, retriever.py) are reused unchanged in Week 7.',
+    code: `<span class="cm"># Registry pattern (Week 4) → MCP server (Week 7)</span>
+REGISTRY[<span class="st">"get_weather"</span>] = {
+  <span class="st">"schema"</span>: weather_schema,
+  <span class="st">"fn"</span>: get_weather
+}
+<span class="cm"># Week 7: same dict, different transport layer</span>`,
+    rules: [
+      'Unchanged from Week 4. No modifications in Week 5.',
+      'MCP evolution path: get_tool_schemas() → list_tools()',
+      'dispatch() → call_tool(). Only transport changes in Week 7.',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'MCP portability path confirmed. Tools unchanged for Week 7 reuse.' }]
+  },
+
+  ragstack: {
+    tag: 'lab4/rag/',
+    title: 'rag/ stack (Week 4)',
+    color: 'var(--gray)',
+    subtitle: 'Chroma · embedder · loader · retriever',
+    desc: 'The Week 4 RAG stack. Four files: embedder.py, store.py, loader.py, retriever.py. Unchanged. search_docs tool still registered in the registry. Not connected to the Week 5 Next.js frontend. The writing assistant in Week 5 does not do RAG — it is a general writing tool calling Claude directly.',
+    code: `<span class="cm"># RAG stack unchanged from Week 4</span>
+<span class="cm"># 101 chunks · 20 docs · cosine similarity</span>
+<span class="cm"># Collection: docs_text_embedding_3_large (prod)</span>
+<span class="cm"># Collection: docs_nomic_embed_text (local)</span>
+
+<span class="cm"># Not wired to Week 5 Next.js frontend</span>
+<span class="cm"># Week 8 capstone: optional integration point</span>`,
+    rules: [
+      'Collection name encodes embedding model — two-collection bug prevention.',
+      'Unchanged from Week 4. Not connected to Week 5 frontend.',
+      'Capstone integration point: connect RAG to Next.js via MCP in Week 7/8.',
+    ],
+    owners: [{ label: 'Riley', cls: 'owner-casey', note: 'RAG stack stable. Week 5 writing assistant calls Claude directly.' }]
+  },
+};
+
+function show(id) {
+  if (!DATA[id]) return;
+  document.querySelectorAll('.node, .user-node').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[onclick*="show('${id}')"]`).forEach(n => n.classList.add('active'));
+
+  const d = DATA[id];
+  document.getElementById('detail-placeholder').style.display = 'none';
+  const content = document.getElementById('detail-content');
+  content.style.display = 'block';
+
+  const ownersHtml = d.owners ? `
+    <div class="detail-section">
+      <div class="detail-section-label">Team sign-off</div>
+      <ul class="detail-rules">
+        ${d.owners.map(o => `<li><span class="owner-tag ${o.cls}">${o.label}</span>${o.note}</li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-tag">${d.tag}</div>
+      <div class="detail-title" style="color:${d.color}">${d.title}</div>
+      <div class="detail-subtitle">${d.subtitle}</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-label">What it does</div>
+        <div class="detail-desc">${d.desc}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Code / pattern</div>
+        <div class="detail-code">${d.code}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Rules &amp; gotchas</div>
+        <ul class="detail-rules">
+          ${d.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+      ${ownersHtml}
+    </div>`;
+}
+</script>
+
+</body>
+</html>
