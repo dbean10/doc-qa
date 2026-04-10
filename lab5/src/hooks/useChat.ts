@@ -13,16 +13,23 @@ export interface ChatMessage {
   status: MessageStatus
 }
 
+export interface TokenUsage {
+  inputTokens: number
+  outputTokens: number
+}
+
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null)
   const abortRef = useRef<AbortController | null>(null)
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim() || isLoading) return
 
     setError(null)
+    setTokenUsage(null)
 
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
@@ -44,7 +51,6 @@ export function useChat() {
     abortRef.current = new AbortController()
 
     try {
-      // Build history for the API — only role + content
       const history: Message[] = [...messages, userMsg].map(m => ({
         role: m.role,
         content: m.content,
@@ -58,26 +64,47 @@ export function useChat() {
       })
 
       if (!response.ok) {
+        // Surface rate limit clearly
+        if (response.status === 429) {
+          const resetAt = response.headers.get('X-RateLimit-Reset')
+          const resetMsg = resetAt
+            ? ` Try again after ${new Date(resetAt).toLocaleTimeString()}.`
+            : ''
+          throw new Error(`Rate limit exceeded.${resetMsg}`)
+        }
         throw new Error(`API error: ${response.status}`)
       }
 
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let accumulated = ""
+      let buffer = ""
 
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
 
-        const chunk = decoder.decode(value, { stream: true })
+        // Buffer chunks — SSE events can split across read() boundaries
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split("\n")
 
-        // Each chunk may contain multiple JSON lines
-        for (const line of chunk.split("\n")) {
+        // Keep the last incomplete line in the buffer
+        buffer = lines.pop() ?? ""
+
+        for (const line of lines) {
           const trimmed = line.trim()
           if (!trimmed) continue
+        
+          // Handle both raw JSON (Anthropic SDK) and SSE format (data: prefix)
+          const jsonStr = trimmed.startsWith("data:")
+            ? trimmed.slice("data:".length).trim()
+            : trimmed
+          if (jsonStr === "[DONE]") continue
 
           try {
-            const event = JSON.parse(trimmed)
+            const event = JSON.parse(jsonStr)
+
+            // Content delta — append text to the assistant message
             if (
               event.type === "content_block_delta" &&
               event.delta?.type === "text_delta" &&
@@ -92,13 +119,37 @@ export function useChat() {
                 )
               )
             }
+
+            // Message delta — carries final token usage
+            if (
+              event.type === "message_delta" &&
+              event.usage?.output_tokens
+            ) {
+              // input_tokens is on message_start, output_tokens on message_delta
+              // We capture both here from the cumulative usage object
+              setTokenUsage(prev => ({
+                inputTokens: prev?.inputTokens ?? 0,
+                outputTokens: event.usage.output_tokens,
+              }))
+            }
+
+            // Message start — carries input token count
+            if (
+              event.type === "message_start" &&
+              event.message?.usage?.input_tokens
+            ) {
+              setTokenUsage({
+                inputTokens: event.message.usage.input_tokens,
+                outputTokens: 0,
+              })
+            }
+
           } catch {
-            // Skip malformed lines — SSE can split across chunks
+            // Skip malformed lines
           }
         }
       }
 
-      // Mark complete
       setMessages(prev =>
         prev.map(m =>
           m.id === assistantMsg.id ? { ...m, status: "complete" } : m
@@ -108,7 +159,9 @@ export function useChat() {
       const isAbort = err instanceof Error && err.name === "AbortError"
       const errorText = isAbort
         ? "Cancelled."
-        : "Something went wrong. Your message is saved — try again."
+        : err instanceof Error
+          ? err.message
+          : "Something went wrong. Your message is saved — try again."
 
       setMessages(prev =>
         prev.map(m =>
@@ -131,7 +184,16 @@ export function useChat() {
   const clearMessages = useCallback(() => {
     setMessages([])
     setError(null)
+    setTokenUsage(null)
   }, [])
 
-  return { messages, isLoading, error, sendMessage, cancelStream, clearMessages }
+  return {
+    messages,
+    isLoading,
+    error,
+    tokenUsage,
+    sendMessage,
+    cancelStream,
+    clearMessages,
+  }
 }

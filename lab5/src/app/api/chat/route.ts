@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
         scrubbedOutput,
         rateLimited: false,
       })
-    })
+    })  
 
     // 7. Return stream to client — rate limit headers included
     return new Response(stream.toReadableStream(), {
