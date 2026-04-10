@@ -5,10 +5,11 @@ import { useEffect, useRef } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { MessageBubble } from "./MessageBubble"
 import { InputBar } from "./InputBar"
+import { TokenDisplay } from "./TokenDisplay"
 import { useChat } from "@/hooks/useChat"
 
 export function ChatWindow() {
-  const { messages, isLoading, sendMessage, cancelStream } = useChat()
+  const { messages, isLoading, sendMessage, cancelStream, tokenUsage } = useChat()
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -36,6 +37,11 @@ export function ChatWindow() {
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
+
+      <TokenDisplay
+        inputTokens={tokenUsage?.inputTokens ?? null}
+        outputTokens={tokenUsage?.outputTokens ?? null}
+      />
 
       <InputBar
         onSend={sendMessage}
