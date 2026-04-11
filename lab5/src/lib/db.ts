@@ -1,5 +1,8 @@
 import { createClient } from '@libsql/client';
 
+console.log('[db] TURSO_DATABASE_URL:', process.env.TURSO_DATABASE_URL ? 'SET' : 'MISSING');
+console.log('[db] TURSO_AUTH_TOKEN:', process.env.TURSO_AUTH_TOKEN ? 'SET' : 'MISSING');
+
 if (!process.env.TURSO_DATABASE_URL) {
   throw new Error('TURSO_DATABASE_URL is not set');
 }
