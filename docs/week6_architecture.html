@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 6 — Production Observability Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a3e10;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+    overflow-x: auto;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: var(--text2);
+    cursor: pointer;
+    border: none;
+    background: none;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .nav-link:hover, .nav-link.active { background: var(--bg3); color: var(--teal); }
+
+  .hero {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 24px;
+  }
+  .hero-inner { max-width: 960px; margin: 0 auto; }
+  .hero-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--teal);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .hero-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 20px;
+  }
+  .hero-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    border: 1px solid;
+  }
+  .pill-teal  { color: var(--teal);   border-color: var(--teal-bd);   background: var(--teal-bg); }
+  .pill-purple{ color: var(--purple); border-color: var(--purple-bd); background: var(--purple-bg); }
+  .pill-amber { color: var(--amber);  border-color: var(--amber-bd);  background: var(--amber-bg); }
+  .pill-coral { color: var(--coral);  border-color: var(--coral-bd);  background: var(--coral-bg); }
+  .pill-green { color: var(--green);  border-color: var(--green-bd);  background: var(--green-bg); }
+
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 24px; }
+
+  .section { margin-bottom: 48px; }
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Pipeline ── */
+  .pipeline {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .pipe-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg2);
+    transition: all 0.15s;
+    min-width: 110px;
+    text-align: center;
+  }
+  .pipe-step:hover { border-color: var(--teal); background: var(--teal-bg); }
+  .pipe-step.active { border-color: var(--teal); background: var(--teal-bg); }
+  .pipe-num {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--text3);
+  }
+  .pipe-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text);
+    font-weight: 600;
+  }
+  .pipe-owner {
+    font-size: 9px;
+    color: var(--text3);
+  }
+  .pipe-arrow {
+    font-size: 14px;
+    color: var(--border2);
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 16px;
+    min-height: 120px;
+  }
+  .detail-title {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--teal);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .detail-sub {
+    font-size: 12px;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .detail-body {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+    margin-bottom: 12px;
+  }
+  .detail-rules { display: flex; flex-direction: column; gap: 4px; }
+  .rule {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text2);
+    padding: 4px 8px;
+    background: var(--bg3);
+    border-radius: 4px;
+    border-left: 2px solid var(--teal);
+  }
+
+  /* ── Node grid ── */
+  .layer-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    margin-top: 20px;
+  }
+  .node-grid { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .node {
+    border-radius: 6px;
+    padding: 12px 14px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.15s;
+    min-width: 140px;
+  }
+  .node:hover { filter: brightness(1.15); }
+  .node.active { filter: brightness(1.2); box-shadow: 0 0 0 2px var(--teal); }
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   color: var(--teal); }
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); color: var(--purple); }
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  color: var(--coral); }
+  .node-amber  { background: var(--amber-bg);  border-color: var(--amber-bd);  color: var(--amber); }
+  .node-green  { background: var(--green-bg);  border-color: var(--green-bd);  color: var(--green); }
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd);   color: var(--gray); }
+  .node-title { font-family: var(--mono); font-size: 11px; font-weight: 600; margin-bottom: 2px; }
+  .node-sub   { font-size: 10px; color: var(--text2); }
+
+  /* ── Owners ── */
+  .owners { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+  .owner {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .owner-taylor { border-color: var(--teal-bd);   color: var(--teal);   background: var(--teal-bg); }
+  .owner-morgan { border-color: var(--coral-bd);  color: var(--coral);  background: var(--coral-bg); }
+  .owner-jordan { border-color: var(--amber-bd);  color: var(--amber);  background: var(--amber-bg); }
+  .owner-sam    { border-color: var(--purple-bd); color: var(--purple); background: var(--purple-bg); }
+  .owner-alex   { border-color: var(--gray-bd);   color: var(--gray);   background: var(--gray-bg); }
+
+  /* ── Stats ── */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; font-family: var(--mono); }
+  .stat-value { font-family: var(--mono); font-size: 20px; color: var(--teal); font-weight: 600; }
+  .stat-sub   { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* ── Hash display ── */
+  .hash-banner {
+    background: var(--teal-bg);
+    border: 1px solid var(--teal-bd);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hash-label { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+  .hash-value { font-family: var(--mono); font-size: 14px; color: var(--teal); font-weight: 600; }
+  .hash-note  { font-size: 11px; color: var(--text2); margin-left: auto; }
+
+  /* ── Decisions ── */
+  .decision-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .decision-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px;
+  }
+  .decision-title { font-family: var(--mono); font-size: 11px; color: var(--amber); margin-bottom: 6px; font-weight: 600; }
+  .decision-chosen { font-size: 11px; color: var(--green); margin-bottom: 4px; }
+  .decision-rejected { font-size: 11px; color: var(--text3); text-decoration: line-through; margin-bottom: 4px; }
+  .decision-reason { font-size: 11px; color: var(--text2); line-height: 1.6; margin-top: 6px; }
+
+  code {
+    font-family: var(--mono);
+    font-size: 10px;
+    background: var(--bg3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: var(--teal);
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">dbean10/doc-qa · <span>week6</span></div>
+    <button class="nav-link active" onclick="showSection('pipeline')">Pipeline</button>
+    <button class="nav-link" onclick="showSection('components')">Components</button>
+    <button class="nav-link" onclick="showSection('decisions')">Decisions</button>
+    <button class="nav-link" onclick="showSection('observability')">Observability</button>
+    <button class="nav-link" onclick="showSection('schema')">Schema</button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">Week 6 · Phase 3 · Production Patterns & Observability</div>
+    <div class="hero-title">Production Observability Layer</div>
+    <div class="hero-sub">Next.js 14 · claude-sonnet-4-6 · Turso · Vercel · April 2026</div>
+    <div class="hero-pills">
+      <span class="pill pill-teal">Turso logging</span>
+      <span class="pill pill-coral">PII scrubbing</span>
+      <span class="pill pill-purple">Rate limiting</span>
+      <span class="pill pill-amber">Admin dashboard</span>
+      <span class="pill pill-green">30 tests passing</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- ── PIPELINE ── -->
+  <div id="section-pipeline" class="section">
+    <div class="section-label">Request Pipeline — Week 6</div>
+
+    <div class="pipeline">
+      <div class="pipe-step active" id="ps-receive" onclick="selectPipe('receive')">
+        <div class="pipe-num">1</div>
+        <div class="pipe-name">receive</div>
+        <div class="pipe-owner">route.ts</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-validate" onclick="selectPipe('validate')">
+        <div class="pipe-num">2</div>
+        <div class="pipe-name">validate</div>
+        <div class="pipe-owner">sanitize.ts</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-sanitize" onclick="selectPipe('sanitize')">
+        <div class="pipe-num">3</div>
+        <div class="pipe-name">sanitize</div>
+        <div class="pipe-owner">sanitize.ts</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-scrub" onclick="selectPipe('scrub')">
+        <div class="pipe-num">4</div>
+        <div class="pipe-name">scrub PII</div>
+        <div class="pipe-owner">pii.ts · Morgan</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-ratelimit" onclick="selectPipe('ratelimit')">
+        <div class="pipe-num">5</div>
+        <div class="pipe-name">rate limit</div>
+        <div class="pipe-owner">rateLimit.ts</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-anthropic" onclick="selectPipe('anthropic')">
+        <div class="pipe-num">6</div>
+        <div class="pipe-name">Anthropic</div>
+        <div class="pipe-owner">claude-sonnet-4-6</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-log" onclick="selectPipe('log')">
+        <div class="pipe-num">7</div>
+        <div class="pipe-name">log</div>
+        <div class="pipe-owner">logger.ts · Taylor</div>
+      </div>
+      <div class="pipe-arrow">→</div>
+      <div class="pipe-step" id="ps-respond" onclick="selectPipe('respond')">
+        <div class="pipe-num">8</div>
+        <div class="pipe-name">respond</div>
+        <div class="pipe-owner">SSE stream</div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="pipe-detail">
+      <div class="detail-title" id="pd-title">1 · receive</div>
+      <div class="detail-sub" id="pd-sub">route.ts · POST /api/chat</div>
+      <div class="detail-body" id="pd-body">Assigns a UUID request_id and records start timestamp. Extracts the client IP from x-forwarded-for (first entry only — Vercel proxies may append their own). Hashes the IP immediately — raw IP never used after this point.</div>
+      <div class="detail-rules" id="pd-rules">
+        <div class="rule">request_id = randomUUID() — correlation handle for the entire request lifecycle</div>
+        <div class="rule">startTime = Date.now() — latency clock starts here, ends at finalMessage</div>
+        <div class="rule">rawIP extracted from x-forwarded-for split(',')[0].trim() — first entry is the client</div>
+        <div class="rule">ipHash = SHA-256(rawIP) — raw IP discarded, hash used for all downstream steps</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COMPONENTS ── -->
+  <div id="section-components" class="section" style="display:none">
+    <div class="section-label">New Components — Week 6</div>
+
+    <div class="layer-label">security layer — Morgan Blake</div>
+    <div class="node-grid">
+      <div class="node node-coral" onclick="selectNode('pii')">
+        <div class="node-title">pii.ts</div>
+        <div class="node-sub">regex PII scrubber</div>
+      </div>
+      <div class="node node-coral" onclick="selectNode('middleware')">
+        <div class="node-title">middleware.ts</div>
+        <div class="node-sub">HTTP basic auth · /admin</div>
+      </div>
+      <div class="node node-coral" onclick="selectNode('ratelimit')">
+        <div class="node-title">rateLimit.ts</div>
+        <div class="node-sub">Turso-backed · 20/min</div>
+      </div>
+    </div>
+
+    <div class="layer-label">observability layer — Taylor Nguyen</div>
+    <div class="node-grid">
+      <div class="node node-teal" onclick="selectNode('logger')">
+        <div class="node-title">logger.ts</div>
+        <div class="node-sub">structured request log</div>
+      </div>
+      <div class="node node-teal" onclick="selectNode('db')">
+        <div class="node-title">db.ts</div>
+        <div class="node-sub">Turso client singleton</div>
+      </div>
+      <div class="node node-teal" onclick="selectNode('costs')">
+        <div class="node-title">costs.ts</div>
+        <div class="node-sub">token cost calculator</div>
+      </div>
+      <div class="node node-teal" onclick="selectNode('admin')">
+        <div class="node-title">admin/page.tsx</div>
+        <div class="node-sub">production dashboard</div>
+      </div>
+    </div>
+
+    <div class="layer-label">UI layer — Sam Park · Casey Romero</div>
+    <div class="node-grid">
+      <div class="node node-purple" onclick="selectNode('tokendisplay')">
+        <div class="node-title">TokenDisplay.tsx</div>
+        <div class="node-sub">N in · N out</div>
+      </div>
+      <div class="node node-purple" onclick="selectNode('usechat')">
+        <div class="node-title">useChat.ts (updated)</div>
+        <div class="node-sub">SSE parser fix · token capture</div>
+      </div>
+    </div>
+
+    <div class="layer-label">infrastructure — Taylor Nguyen</div>
+    <div class="node-grid">
+      <div class="node node-green" onclick="selectNode('turso')">
+        <div class="node-title">Turso (doc-qa-logs)</div>
+        <div class="node-sub">serverless SQLite · aws-us-east-2</div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="comp-detail">
+      <div class="detail-title">Click any component to see details</div>
+      <div class="detail-body">Select a component above to view its responsibility, design decisions, and owner notes.</div>
+    </div>
+  </div>
+
+  <!-- ── DECISIONS ── -->
+  <div id="section-decisions" class="section" style="display:none">
+    <div class="section-label">Architecture Decisions</div>
+
+    <div class="decision-grid">
+      <div class="decision-card">
+        <div class="decision-title">PII Detection Strategy</div>
+        <div class="decision-chosen">✓ Regex in TypeScript (pii.ts)</div>
+        <div class="decision-rejected">✗ Presidio (ML, Python sidecar)</div>
+        <div class="decision-rejected">✗ AWS Comprehend (external API)</div>
+        <div class="decision-reason">Regex runs in-process, zero external hops, zero infra. ML-based detection has better recall but requires a Docker sidecar (Presidio) or sends user text to a third party to detect PII (Comprehend — circular trust problem). Presidio sidecar is the documented production upgrade path.</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-title">Logging Database</div>
+        <div class="decision-chosen">✓ Turso (serverless SQLite, HTTP-native)</div>
+        <div class="decision-rejected">✗ Cloud SQL (persistent TCP, ~$10/mo minimum)</div>
+        <div class="decision-rejected">✗ Firestore (already provisioned, NoSQL)</div>
+        <div class="decision-reason">Vercel serverless functions cannot hold persistent TCP connections — Cloud SQL's connection model breaks in this deployment. Turso speaks HTTP, costs zero at bootcamp scale, provides standard SQL for dashboard aggregations. Firestore (already in GCP) was the alternative, but NoSQL is awkward for SUM/AVG analytics.</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-title">Admin Route Protection</div>
+        <div class="decision-chosen">✓ HTTP Basic Auth (middleware.ts)</div>
+        <div class="decision-rejected">✗ Open (no protection)</div>
+        <div class="decision-rejected">✗ Secret query param (appears in logs)</div>
+        <div class="decision-reason">Basic auth over HTTPS is adequate for a single admin user. Query params appear in Vercel access logs and browser history — worse than no auth because it creates a false sense of security. HMAC was considered but requires the client to sign requests, which exposes the key in browser context. HMAC is the right pattern for machine-to-machine (Week 7).</div>
+      </div>
+      <div class="decision-card">
+        <div class="decision-title">Rate Limit Backing Store</div>
+        <div class="decision-chosen">✓ Turso (persistent across invocations)</div>
+        <div class="decision-rejected">✗ In-memory (resets on cold start)</div>
+        <div class="decision-reason">In-memory rate limiting resets on every Vercel cold start, providing almost no protection in serverless. Each function invocation starts fresh. Turso-backed rate limiting is accurate across all invocations. Atomic upsert (INSERT...ON CONFLICT DO UPDATE) prevents race conditions when concurrent requests hit the same window.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── OBSERVABILITY ── -->
+  <div id="section-observability" class="section" style="display:none">
+    <div class="section-label">Observability — Session Data</div>
+
+    <div class="hash-banner">
+      <div>
+        <div class="hash-label">SYSTEM PROMPT HASH BASELINE</div>
+        <div class="hash-value">d05a31b469b4fe3f</div>
+      </div>
+      <div class="hash-note">SHA-256(SYSTEM_PROMPT)[:16] · established Week 6 · every row should match until deliberate change</div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">REQUESTS LOGGED</div>
+        <div class="stat-value">5</div>
+        <div class="stat-sub">session total</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">INPUT TOKENS</div>
+        <div class="stat-value">505</div>
+        <div class="stat-sub">SUM(input_tokens)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">OUTPUT TOKENS</div>
+        <div class="stat-value">1,309</div>
+        <div class="stat-sub">SUM(output_tokens)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">EST. COST</div>
+        <div class="stat-value">$0.015</div>
+        <div class="stat-sub">@ Sonnet pricing</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">AVG LATENCY</div>
+        <div class="stat-value">7,274ms</div>
+        <div class="stat-sub">local dev · Turso · Anthropic</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">RATE LIMITED</div>
+        <div class="stat-value">0</div>
+        <div class="stat-sub">of 5 requests</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">JEST TESTS</div>
+        <div class="stat-value">30</div>
+        <div class="stat-sub">0 failing · 0.297s</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">CI RUNTIME</div>
+        <div class="stat-value">36s</div>
+        <div class="stat-sub">PR #22 GitHub Actions</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-top:24px">Cost Pricing Constants (configurable via env vars)</div>
+    <div class="node-grid">
+      <div class="node node-amber">
+        <div class="node-title">Input tokens</div>
+        <div class="node-sub">$3.00 / 1M tokens</div>
+        <div class="node-sub">COST_PER_INPUT_TOKEN_PER_M</div>
+      </div>
+      <div class="node node-amber">
+        <div class="node-title">Output tokens</div>
+        <div class="node-sub">$15.00 / 1M tokens</div>
+        <div class="node-sub">COST_PER_OUTPUT_TOKEN_PER_M</div>
+      </div>
+      <div class="node node-coral">
+        <div class="node-title">Alert threshold</div>
+        <div class="node-sub">$1.00 / day default</div>
+        <div class="node-sub">COST_ALERT_THRESHOLD_USD</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCHEMA ── -->
+  <div id="section-schema" class="section" style="display:none">
+    <div class="section-label">Turso Schema — doc-qa-logs</div>
+
+    <div class="layer-label">request_logs — one row per API call</div>
+    <div class="node-grid">
+      <div class="node node-teal" onclick="selectField('request_id')">
+        <div class="node-title">request_id</div>
+        <div class="node-sub">TEXT · UUID · correlation</div>
+      </div>
+      <div class="node node-teal" onclick="selectField('prompt_hash')">
+        <div class="node-title">prompt_hash</div>
+        <div class="node-sub">TEXT · SHA-256[:16] · drift</div>
+      </div>
+      <div class="node node-coral" onclick="selectField('ip_hash')">
+        <div class="node-title">ip_hash</div>
+        <div class="node-sub">TEXT · SHA-256[:16] · audit</div>
+      </div>
+      <div class="node node-amber" onclick="selectField('tokens')">
+        <div class="node-title">input/output_tokens</div>
+        <div class="node-sub">INTEGER · cost tracking</div>
+      </div>
+      <div class="node node-amber" onclick="selectField('latency')">
+        <div class="node-title">latency_ms</div>
+        <div class="node-sub">INTEGER · performance</div>
+      </div>
+      <div class="node node-purple" onclick="selectField('scrubbed')">
+        <div class="node-title">scrubbed_input/output</div>
+        <div class="node-sub">TEXT · nullable · replay</div>
+      </div>
+      <div class="node node-gray" onclick="selectField('rate_limited')">
+        <div class="node-title">rate_limited</div>
+        <div class="node-sub">INTEGER · 0/1 boolean</div>
+      </div>
+      <div class="node node-gray" onclick="selectField('error')">
+        <div class="node-title">error</div>
+        <div class="node-sub">TEXT · nullable · debugging</div>
+      </div>
+    </div>
+
+    <div class="layer-label" style="margin-top:20px">rate_limit_windows — sliding window state</div>
+    <div class="node-grid">
+      <div class="node node-coral">
+        <div class="node-title">ip_hash + window_start</div>
+        <div class="node-sub">TEXT · composite PRIMARY KEY</div>
+      </div>
+      <div class="node node-amber">
+        <div class="node-title">request_count</div>
+        <div class="node-sub">INTEGER · atomic upsert</div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="schema-detail" style="margin-top:16px">
+      <div class="detail-title">Click any field to see design rationale</div>
+      <div class="detail-body">Each column in request_logs has a specific diagnostic purpose. None are there for completeness — all are there because Taylor or Morgan needed them.</div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+const sections = ['pipeline','components','decisions','observability','schema'];
+
+function showSection(name) {
+  sections.forEach(s => {
+    document.getElementById('section-'+s).style.display = s===name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+// ── Pipeline detail data ──
+const pipeData = {
+  receive: {
+    title: '1 · receive',
+    sub: 'route.ts · POST /api/chat',
+    body: 'Assigns a UUID request_id and records start timestamp. Extracts the client IP from x-forwarded-for (first entry only — Vercel proxies may append their own). Hashes the IP immediately — raw IP is never stored.',
+    rules: [
+      'request_id = randomUUID() — correlation handle for the entire request lifecycle',
+      'startTime = Date.now() — latency clock starts here, ends at finalMessage event',
+      'rawIP from x-forwarded-for.split(",")[0].trim() — first entry is original client',
+      'ipHash = SHA-256(rawIP)[:16] — raw IP discarded immediately after hashing'
+    ]
+  },
+  validate: {
+    title: '2 · validate',
+    sub: 'sanitize.ts · validateMessages()',
+    body: 'Checks message array shape before any processing. Rejects malformed payloads at the door. Week 5 bug: operator precedence meant messages with role=user and no content field passed validation. Fixed with explicit parentheses. The 20 Jest tests in sanitize.test.ts cover this function.',
+    rules: [
+      'validateMessages() runs before sanitizeMessages() — shape check before content processing',
+      'Returns 400 immediately on invalid shape — no processing of malformed input',
+      'Bug found by tests, not code review: operator precedence in role check',
+      'Week 5 fix: explicit parentheses around (role === "user" || role === "assistant")'
+    ]
+  },
+  sanitize: {
+    title: '3 · sanitize',
+    sub: 'sanitize.ts · sanitizeMessages()',
+    body: 'Enforces history limit (20 messages), content length limit (4000 chars), and strips 8 injection patterns. This is the injection defense layer from Week 5. The architectural defense is role isolation — user content goes into the user role, never interpolated into the system prompt.',
+    rules: [
+      'History limit: keeps last 20 messages — prevents context window exhaustion',
+      'Content limit: 4000 chars per message — prevents prompt injection via length',
+      '8 injection patterns stripped — belt and suspenders alongside role isolation',
+      'Role isolation is the primary defense — sanitization is secondary'
+    ]
+  },
+  scrub: {
+    title: '4 · scrub PII',
+    sub: 'pii.ts · scrubPII() — Week 6 addition · Morgan Blake',
+    body: 'Applies regex patterns to replace PII with [REDACTED_TYPE] tokens. Runs BEFORE the Anthropic API call and BEFORE the log write. The order is enforced structurally — the scrubbed variable is what gets passed downstream. There is no path where unscrubbed content reaches the API or the log.',
+    rules: [
+      'Patterns: email, phone (US formats), SSN (ddd-dd-dddd), credit card (13-19 digits), IP address',
+      'Returns [REDACTED_EMAIL], [REDACTED_PHONE], [REDACTED_SSN], [REDACTED_CREDIT_CARD], [REDACTED_IP_ADDRESS]',
+      'containsPII() detects without mutating — used for logging decisions',
+      'Production upgrade path: Presidio sidecar (ML-based, higher recall, in-process)',
+      '10 Jest tests — all assert PII is ABSENT in output, not just that function ran'
+    ]
+  },
+  ratelimit: {
+    title: '5 · rate limit check',
+    sub: 'rateLimit.ts · checkRateLimit() — Turso-backed · Morgan Blake',
+    body: 'Looks up the current request count for this IP hash in the current time window. Atomically increments via INSERT...ON CONFLICT DO UPDATE — prevents race conditions when concurrent invocations hit the same window. Returns allowed, remaining, and resetAt. If blocked, logs the attempt and returns 429 with Retry-After header.',
+    rules: [
+      'Window: RATE_LIMIT_WINDOW_MS=60000 (60 seconds) — configurable env var',
+      'Limit: RATE_LIMIT_MAX=20 — configurable env var, no redeploy needed to adjust',
+      'Atomic upsert prevents race: SELECT then UPDATE has race condition in serverless',
+      'Rate-limited requests are logged (input_tokens=0, rate_limited=1) for audit',
+      '429 response includes X-RateLimit-Remaining and X-RateLimit-Reset headers'
+    ]
+  },
+  anthropic: {
+    title: '6 · Anthropic API call',
+    sub: 'route.ts · anthropic.messages.stream()',
+    body: 'Calls the Anthropic API with scrubbed, validated messages. Content has passed validation, sanitization, PII scrubbing, and rate limit check before reaching this step. The stream is returned as a ReadableStream SSE response. Token counts are captured from the finalMessage event, not from individual stream chunks.',
+    rules: [
+      'Model: claude-sonnet-4-6 — constant, not configurable per-request',
+      'max_tokens: 1024 — prevents runaway long responses',
+      'stream.on("finalMessage") captures input_tokens and output_tokens after stream closes',
+      'SSE format: Anthropic SDK sends raw JSON lines, NOT data:-prefixed (SSE spec)',
+      'useChat.ts parser updated to handle both formats for forward compatibility'
+    ]
+  },
+  log: {
+    title: '7 · log to Turso',
+    sub: 'logger.ts · logRequest() — Taylor Nguyen',
+    body: 'Writes one row to request_logs after the stream completes. Captures real token counts and real latency from the finalMessage event. The logger wraps its own errors in try/catch and swallows them — a logging failure never causes a user-facing 500. The API call already completed successfully.',
+    rules: [
+      'Writes AFTER stream — captures real token counts, not estimates',
+      'latency_ms = Date.now() - startTime — wall clock from receive to finalMessage',
+      'prompt_hash = SHA-256(SYSTEM_PROMPT)[:16] — drift detection fingerprint',
+      'scrubbed_input and scrubbed_output stored — PII already removed at step 4',
+      'Logger errors swallowed with console.error — never crash the request'
+    ]
+  },
+  respond: {
+    title: '8 · respond',
+    sub: 'route.ts · new Response(stream.toReadableStream())',
+    body: 'Returns the Anthropic stream as a ReadableStream to the client with SSE headers. Includes rate limit headers on every response so the client can display remaining quota. The useChat.ts hook reads the stream, parses content_block_delta events for text, and captures token counts from message_start and message_delta.',
+    rules: [
+      'Content-Type: text/event-stream — SSE transport',
+      'X-RateLimit-Remaining and X-RateLimit-Reset on every response',
+      'Client captures input_tokens from message_start event',
+      'Client captures output_tokens from message_delta event usage field',
+      'TokenDisplay component renders N in · N out after stream completes'
+    ]
+  }
+};
+
+function selectPipe(name) {
+  document.querySelectorAll('.pipe-step').forEach(s => s.classList.remove('active'));
+  document.getElementById('ps-'+name).classList.add('active');
+  const d = pipeData[name];
+  document.getElementById('pd-title').textContent = d.title;
+  document.getElementById('pd-sub').textContent = d.sub;
+  document.getElementById('pd-body').textContent = d.body;
+  const rules = document.getElementById('pd-rules');
+  rules.innerHTML = d.rules.map(r => `<div class="rule">${r}</div>`).join('');
+}
+
+// ── Component detail data ──
+const compData = {
+  pii: {
+    title: 'pii.ts — PII Scrubber',
+    sub: 'src/lib/pii.ts · Morgan Blake',
+    body: 'Regex-based PII scrubber. Five pattern categories: email, phone (US formats including dotted, dashed, parenthesized), SSN (ddd-dd-dddd format), credit card (13-19 contiguous digits with optional spaces/dashes), and IP address. Uses stateful regex reset (lastIndex=0) to prevent false negatives on repeated calls. 10 Jest tests all assert PII is absent in output.',
+    rules: [
+      'scrubPII(text): string — replaces matches with [REDACTED_TYPE] tokens',
+      'containsPII(text): boolean — detection without mutation',
+      'pattern.lastIndex = 0 before each test() — prevents stateful regex bugs',
+      'Production upgrade: Presidio sidecar for ML-based contextual detection'
+    ]
+  },
+  middleware: {
+    title: 'middleware.ts — HTTP Basic Auth',
+    sub: 'src/middleware.ts · Morgan Blake · CRITICAL: must be in src/ not project root',
+    body: 'Intercepts all requests to /admin/:path*. Returns 401 with WWW-Authenticate header if no Authorization header present or credentials incorrect. Browser shows native credential dialog on 401. Correctly handles passwords containing colons by splitting on first colon only (rest.join(":") pattern).',
+    rules: [
+      'MUST be in src/ when project has src/app/ — root placement silently ignored',
+      'Diagnosed via: cat .next/server/middleware-manifest.json (middleware:{} = not loaded)',
+      'Validated via: curl -v http://localhost:3000/admin | grep "< HTTP"',
+      'rest.join(":") handles passwords with colons — naive split(":")[1] truncates',
+      'ADMIN_USER and ADMIN_PASSWORD env vars — Vercel dashboard for production'
+    ]
+  },
+  ratelimit: {
+    title: 'rateLimit.ts — Turso-backed Rate Limiter',
+    sub: 'src/lib/rateLimit.ts · Morgan Blake · Sam Park',
+    body: 'Per-IP-hash rate limiting using Turso as the backing store. Window calculated by flooring current timestamp to window boundary. Atomic upsert prevents race conditions when concurrent serverless invocations hit the same window. Returns allowed, remaining count, and window reset time.',
+    rules: [
+      'INSERT...ON CONFLICT DO UPDATE — atomic read-modify-write, no race condition',
+      'windowStart = floor(now / WINDOW_MS) * WINDOW_MS — deterministic window key',
+      'In-memory alternative resets on cold start — provides zero protection in serverless',
+      'Both RATE_LIMIT_MAX and RATE_LIMIT_WINDOW_MS are env vars — adjustable without redeploy'
+    ]
+  },
+  logger: {
+    title: 'logger.ts — Structured Request Logger',
+    sub: 'src/lib/logger.ts · Taylor Nguyen',
+    body: 'Writes one row to request_logs on every API call. Captures request_id, timestamp, model, token counts, latency, prompt hash, IP hash, scrubbed content, rate limit status, and error. Wraps all database writes in try/catch — logger errors are swallowed, never surface to the user.',
+    rules: [
+      'hashPrompt(systemPrompt): SHA-256[:16] — drift detection baseline',
+      'hashIP(ip): SHA-256[:16] — audit capability without storing PII',
+      'try/catch around db.execute() — logger failure never causes 500',
+      'scrubbed_input and scrubbed_output — PII already removed upstream',
+      'Rate-limited requests logged with input_tokens=0, rate_limited=1'
+    ]
+  },
+  db: {
+    title: 'db.ts — Turso Client Singleton',
+    sub: 'src/lib/db.ts · Taylor Nguyen',
+    body: 'Creates and exports a single Turso client instance. Validates both required env vars at module load time — throws immediately if either is missing rather than failing silently on first query. All other files import db from here.',
+    rules: [
+      'Throws on missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN — fail fast',
+      'Single export point — one place to change if credentials rotate or client version updates',
+      'HTTP-native connection — no persistent TCP socket, safe for Vercel serverless'
+    ]
+  },
+  costs: {
+    title: 'costs.ts — Token Cost Calculator',
+    sub: 'src/lib/costs.ts · Taylor Nguyen',
+    body: 'Calculates estimated API cost from token counts. Pricing constants configurable via env vars so a rate change does not require a code change. ALERT_THRESHOLD_USD exported for use in admin/page.tsx cost alert banner.',
+    rules: [
+      'INPUT_COST_PER_M: $3.00 default — COST_PER_INPUT_TOKEN_PER_M env var',
+      'OUTPUT_COST_PER_M: $15.00 default — COST_PER_OUTPUT_TOKEN_PER_M env var',
+      'ALERT_THRESHOLD_USD: $1.00 default — COST_ALERT_THRESHOLD_USD env var',
+      'formatCost(): shows cents for sub-penny amounts, dollars otherwise'
+    ]
+  },
+  admin: {
+    title: 'admin/page.tsx — Production Dashboard',
+    sub: 'src/app/admin/page.tsx · Taylor Nguyen · Jordan Rivera gate',
+    body: 'Next.js Server Component. Queries Turso directly on the server — no client-side data fetching. Two queries run in parallel via Promise.all: getDailyStats() (aggregations) and getRecentRequests() (last 20 rows). Cost alert fires to console.warn when daily spend exceeds threshold. Jordan\'s gate: real data, not mocked.',
+    rules: [
+      'Server Component — queries run server-side, credentials never exposed to client',
+      'Promise.all([getDailyStats(), getRecentRequests()]) — parallel queries',
+      'COALESCE(SUM(), 0) — handles empty table (no requests today)',
+      'cost alert: console.warn fires to Vercel function logs — expandable to email/Slack',
+      'Jordan gate: confirmed with real session data before PR #23 merge'
+    ]
+  },
+  tokendisplay: {
+    title: 'TokenDisplay.tsx — Token Count UI',
+    sub: 'src/components/chat/TokenDisplay.tsx · Sam Park · Casey Romero',
+    body: 'Renders "N in · N out" below the last assistant message. Null-safe — returns null before first response. Clears on next message send via setTokenUsage(null) at top of sendMessage(). Positioned between ScrollArea and InputBar in ChatWindow.',
+    rules: [
+      'Returns null when inputTokens or outputTokens is null — hidden before first response',
+      'Positioned: ScrollArea → TokenDisplay → InputBar in ChatWindow',
+      'Casey: token display is a trust signal — users see that responses have measurable cost',
+      'Captured from message_start (input) and message_delta usage (output) events'
+    ]
+  },
+  usechat: {
+    title: 'useChat.ts — SSE Parser (updated)',
+    sub: 'src/hooks/useChat.ts · Sam Park — SSE parser fix',
+    body: 'Key fix: Anthropic SDK sends raw JSON lines without "data:" prefix, despite SSE spec requiring it. Original parser assumed "data:" prefix and was silently discarding all events. Fixed with dual-format parser that handles both. Added line buffer to handle SSE events split across read() boundaries. Added token capture from message_start and message_delta.',
+    rules: [
+      'Buffer pattern: accumulate chunks, split on \\n, keep incomplete tail',
+      'Dual-format: startsWith("data:") ? slice prefix : use as-is',
+      'message_start → input_tokens captured, message_delta → output_tokens captured',
+      '429 rate limit error surfaced with human-readable retry time from X-RateLimit-Reset',
+      'Original latent bug: try/catch was hiding parser errors silently'
+    ]
+  },
+  turso: {
+    title: 'Turso — doc-qa-logs',
+    sub: 'Serverless SQLite · aws-us-east-2 · Taylor Nguyen',
+    body: 'Managed SQLite-compatible database built on libSQL. HTTP-native — no persistent TCP connections, safe for Vercel serverless functions. Two tables: request_logs (observability) and rate_limit_windows (rate limiter state). Chosen over Cloud SQL (TCP/connection model incompatible with serverless) and Firestore (NoSQL awkward for aggregation queries).',
+    rules: [
+      'libSQL: open-contribution fork of SQLite — fully backwards compatible',
+      'HTTP-native: speaks WebSocket and HTTP, no persistent socket required',
+      'SQLite-compatible: standard SQL, GROUP BY, SUM, AVG, all work as expected',
+      'Free tier: unlimited databases — zero cost at bootcamp scale',
+      'Local dev: file:local.db, production: libsql://doc-qa-logs-dbean10.turso.io'
+    ]
+  }
+};
+
+function selectNode(name) {
+  document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+  event.target.closest('.node').classList.add('active');
+  const d = compData[name];
+  const panel = document.getElementById('comp-detail');
+  panel.innerHTML = `
+    <div class="detail-title">${d.title}</div>
+    <div class="detail-sub">${d.sub}</div>
+    <div class="detail-body">${d.body}</div>
+    <div class="detail-rules">${d.rules.map(r => `<div class="rule">${r}</div>`).join('')}</div>
+  `;
+}
+
+// ── Schema field detail data ──
+const fieldData = {
+  request_id: {
+    title: 'request_id — UUID correlation handle',
+    body: 'Generated at the top of the POST handler before any processing. Every log entry — successful, rate-limited, or errored — shares the same request_id. Allows correlation of a user complaint to an exact database row without guessing by timestamp.',
+    rules: ['TEXT NOT NULL', 'randomUUID() from Node.js crypto module', 'Present on every row including rate-limited and errored requests']
+  },
+  prompt_hash: {
+    title: 'prompt_hash — Drift detection fingerprint',
+    body: 'SHA-256 of the SYSTEM_PROMPT constant, truncated to 16 hex characters. Same hash on every request until SYSTEM_PROMPT changes. When the hash changes in the logs, it signals a system prompt change — even if the change was accidental (wrong env var, edited wrong file). Week 6 baseline: d05a31b469b4fe3f.',
+    rules: ['TEXT NOT NULL', 'SHA-256(SYSTEM_PROMPT)[:16]', 'Baseline: d05a31b469b4fe3f', 'Hash change = system prompt change — behavioral drift detected without additional infrastructure']
+  },
+  ip_hash: {
+    title: 'ip_hash — Rate limit audit without PII',
+    body: "SHA-256 of the client IP address, truncated to 16 hex characters. Gives rate limit audit capability — patterns of abuse are visible across time without storing raw IP addresses. Morgan's addition to the schema. Raw IP is never written to any table.",
+    rules: ['TEXT NOT NULL', 'SHA-256(rawIP)[:16]', 'Raw IP discarded immediately after hashing', 'Enables: SELECT COUNT(*) FROM rate_limit_windows WHERE ip_hash = ?']
+  },
+  tokens: {
+    title: 'input_tokens / output_tokens — Cost tracking',
+    body: 'Captured from message.usage in the finalMessage event — after the stream completes, not estimated from the request. These are the authoritative token counts from the Anthropic API. Used for cost calculation in the admin dashboard and for detecting unexpectedly expensive requests.',
+    rules: ['INTEGER NOT NULL', 'From message.usage.input_tokens and output_tokens', '0 for rate-limited requests (model never called)', 'Used in: SUM(input_tokens + output_tokens) for daily cost calculation']
+  },
+  latency: {
+    title: 'latency_ms — End-to-end wall clock',
+    body: 'Time from request receipt to finalMessage event. Includes: network to Anthropic, model inference time, streaming, and Turso write. Not model-only latency. Useful for identifying slow requests and for detecting when Anthropic latency degrades. Local dev baseline ~7,274ms includes all overhead.',
+    rules: ['INTEGER NOT NULL', 'Date.now() - startTime at finalMessage', 'Includes network + inference + streaming — not model-only', '0 for rate-limited requests']
+  },
+  scrubbed: {
+    title: 'scrubbed_input / scrubbed_output — Replay capability',
+    body: 'The last user message and full assistant response after PII scrubbing. Stored for debugging — allows replaying the exact prompt that caused a problem. Nullable because rate-limited and errored requests may not have both. PII is removed before this column is written.',
+    rules: ['TEXT, nullable', 'PII scrubbed before write — scrubPII() runs at step 4, logging at step 7', 'scrubbed_input: last user message only (messages.at(-1))', 'scrubbed_output: full assistant response text']
+  },
+  rate_limited: {
+    title: 'rate_limited — Boolean flag',
+    body: 'Stored as INTEGER (0 or 1) — SQLite has no boolean type. Set to 1 when the rate limiter blocks the request. Useful for identifying abusive IPs (GROUP BY ip_hash WHERE rate_limited=1) and for monitoring whether the 20/min limit is appropriate for real usage patterns.',
+    rules: ['INTEGER DEFAULT 0', '1 = request was blocked, model was not called', '0 = request was allowed through', 'Admin dashboard: SUM(CASE WHEN rate_limited=1 THEN 1 ELSE 0 END)']
+  },
+  error: {
+    title: 'error — Exception message for debugging',
+    body: 'The error message from any exception caught in the route handler. Null on successful requests. Allows post-hoc debugging of 500 errors without relying on ephemeral Vercel function logs. Stored as the error.message string or String(error) for non-Error exceptions.',
+    rules: ['TEXT, nullable', 'null on success', 'error instanceof Error ? error.message : String(error)', 'Visible in admin dashboard Recent Requests table']
+  }
+};
+
+function selectField(name) {
+  const d = fieldData[name];
+  const panel = document.getElementById('schema-detail');
+  panel.innerHTML = `
+    <div class="detail-title">${d.title}</div>
+    <div class="detail-body">${d.body}</div>
+    <div class="detail-rules">${d.rules.map(r => `<div class="rule">${r}</div>`).join('')}</div>
+  `;
+}
+
+// Init
+selectPipe('receive');
+</script>
+</body>
+</html>
