@@ -1,3 +1,4 @@
+export const dynamic = 'force-dynamic'
 import { db } from '@/lib/db'
 import { estimateCost, formatCost, ALERT_THRESHOLD_USD } from '@/lib/costs'
 
