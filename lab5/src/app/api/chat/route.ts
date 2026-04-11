@@ -5,7 +5,7 @@ import { randomUUID } from "crypto"
 import { sanitizeMessages, validateMessages } from "@/lib/sanitize"
 import { scrubPII } from "@/lib/pii"
 import { checkRateLimit } from "@/lib/rateLimit"
-import { logRequest, hashIP, hashPrompt } from "@/lib/logger"
+import { logRequest, hashIP } from "@/lib/logger"
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
