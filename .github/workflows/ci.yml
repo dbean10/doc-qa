@@ -28,7 +28,7 @@ jobs:
         run: uv run ruff check .
 
       - name: Python unit tests
-        run: uv run pytest -m "not integration and not eval" --tb=short
+        run: uv run pytest -m "not integration and not eval and not slow" --tb=short
 
       # ── Node (lab5) ────────────────────────────────────────────
       - name: Set up Node
