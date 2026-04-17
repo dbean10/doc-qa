@@ -12,18 +12,15 @@ No HTTP — tools are imported and called as Python functions.
 This is the test-safe path; production uses Next.js → HTTP → FastAPI.
 """
 
-import asyncio
 import os
 import sys
 import json
 from pathlib import Path
 from typing import TypedDict, Literal, Optional
-from dataclasses import dataclass, field
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import anthropic
-from config import ENVIRONMENT
 
 # ---------------------------------------------------------------------------
 # Config
@@ -35,9 +32,9 @@ client = anthropic.Anthropic()
 # ---------------------------------------------------------------------------
 # Tool implementations — imported directly, no HTTP needed for tests
 # ---------------------------------------------------------------------------
-from lab4.tools.weather import get_weather
-from lab4.tools.reminder import create_reminder
-from lab4.rag.retriever import search_docs
+from lab4.tools.weather import get_weather  # noqa: E402
+from lab4.tools.reminder import create_reminder  # noqa: E402
+from lab4.rag.retriever import search_docs  # noqa: E402
 
 TOOL_REGISTRY = {
     "search_documents": lambda inp: search_docs(query=inp["query"]),
