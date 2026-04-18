@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 7 — AI Agents & MCP Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a3e10;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+    overflow-x: auto;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--teal); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    color: var(--text2);
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    border: none;
+    background: none;
+  }
+  .nav-link:hover { background: var(--bg3); color: var(--text); }
+  .nav-link.active { color: var(--teal); background: var(--teal-bg); }
+
+  .hero {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 40px 24px 32px;
+  }
+  .hero-inner { max-width: 960px; margin: 0 auto; }
+  .hero-phase {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--purple);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .hero-title {
+    font-size: 26px;
+    font-weight: 300;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .hero-title strong { font-weight: 500; color: var(--teal); }
+  .hero-sub {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 20px;
+  }
+  .hero-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .tag-teal   { color: var(--teal);   background: var(--teal-bg);   border-color: var(--teal-bd); }
+  .tag-purple { color: var(--purple); background: var(--purple-bg); border-color: var(--purple-bd); }
+  .tag-amber  { color: var(--amber);  background: var(--amber-bg);  border-color: var(--amber-bd); }
+  .tag-coral  { color: var(--coral);  background: var(--coral-bg);  border-color: var(--coral-bd); }
+  .tag-green  { color: var(--green);  background: var(--green-bg);  border-color: var(--green-bd); }
+  .tag-gray   { color: var(--gray);   background: var(--gray-bg);   border-color: var(--gray-bd); }
+
+  .main { max-width: 960px; margin: 0 auto; padding: 32px 24px 0; }
+
+  .section { margin-bottom: 48px; }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .card:hover { border-color: var(--border2); }
+  .card.active { border-color: var(--teal-bd); }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+  .card-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-bottom: 4px;
+  }
+  .card-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+  .card-sub {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+  }
+  .card-chevron {
+    font-size: 12px;
+    color: var(--text3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .card.active .card-chevron { transform: rotate(180deg); }
+  .card-body {
+    display: none;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+  .card.active .card-body { display: block; }
+  .card-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.6;
+    margin-bottom: 16px;
+  }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.7;
+    overflow-x: auto;
+    margin-bottom: 14px;
+    white-space: pre;
+  }
+  .cm { color: var(--text3); }
+  .kw { color: var(--purple); }
+  .st { color: var(--teal); }
+  .fn { color: var(--amber); }
+  .co { color: var(--coral); }
+  .gn { color: var(--green); }
+
+  .rules { margin-top: 12px; }
+  .rules-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .rule {
+    font-size: 12px;
+    color: var(--text2);
+    padding: 5px 0 5px 14px;
+    border-left: 2px solid var(--border);
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+
+  .owners { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .owner {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .owner-alex   { color: var(--purple); background: var(--purple-bg); border-color: var(--purple-bd); }
+  .owner-morgan { color: var(--coral);  background: var(--coral-bg);  border-color: var(--coral-bd); }
+  .owner-jordan { color: var(--amber);  background: var(--amber-bg);  border-color: var(--amber-bd); }
+  .owner-sam    { color: var(--teal);   background: var(--teal-bg);   border-color: var(--teal-bd); }
+  .owner-taylor { color: var(--green);  background: var(--green-bg);  border-color: var(--green-bd); }
+  .owner-casey  { color: #d4a0f0;       background: #1e1030;          border-color: #5a3080; }
+  .owner-riley  { color: #60c0f0;       background: #0f1e2a;          border-color: #1a4060; }
+
+  /* ── Flow diagram ── */
+  .flow {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+  .flow-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: nowrap;
+  }
+  .flow-box {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    border: 1px solid;
+    white-space: nowrap;
+  }
+  .flow-arrow {
+    color: var(--text3);
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+  .flow-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    margin-left: 4px;
+    white-space: nowrap;
+  }
+
+  /* ── Stats grid ── */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+  }
+  .stat-label { font-family: var(--mono); font-size: 10px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 500; color: var(--teal); margin-bottom: 2px; }
+  .stat-detail { font-family: var(--mono); font-size: 10px; color: var(--text2); }
+
+  /* ── Table ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+  .data-table th {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .data-table td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    line-height: 1.5;
+    vertical-align: top;
+  }
+  .data-table tr:last-child td { border-bottom: none; }
+  .data-table tr:hover td { background: var(--bg3); }
+
+  /* ── DoD table ── */
+  .dod-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .dod-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .dod-table tr:last-child td { border-bottom: none; }
+  .dod-check { color: var(--green); font-weight: 600; font-family: var(--mono); font-size: 13px; }
+  .dod-gate { color: var(--text); font-weight: 500; }
+  .dod-detail { color: var(--text2); }
+  .dod-owner { font-family: var(--mono); font-size: 10px; }
+
+  /* ── Commentary ── */
+  .commentary { display: flex; flex-direction: column; gap: 12px; }
+  .comment-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-left: 3px solid;
+    border-radius: 4px;
+    padding: 16px;
+  }
+  .comment-who {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .comment-text { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  /* ── Tier badge ── */
+  .tier {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    margin-bottom: 6px;
+  }
+  .tier-1 { background: var(--coral-bg); border: 1px solid var(--coral-bd); color: var(--coral); }
+  .tier-2 { background: var(--amber-bg); border: 1px solid var(--amber-bd); color: var(--amber); }
+  .tier-3 { background: var(--green-bg); border: 1px solid var(--green-bd); color: var(--green); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-brand">doc-qa · <span>week 7</span></div>
+    <button class="nav-link active" onclick="showSection('overview')">Overview</button>
+    <button class="nav-link" onclick="showSection('architecture')">Architecture</button>
+    <button class="nav-link" onclick="showSection('react')">ReAct Loop</button>
+    <button class="nav-link" onclick="showSection('mcp')">MCP Server</button>
+    <button class="nav-link" onclick="showSection('evals')">Evals</button>
+    <button class="nav-link" onclick="showSection('dod')">DoD</button>
+    <button class="nav-link" onclick="showSection('findings')">Findings</button>
+    <button class="nav-link" onclick="showSection('commentary')">Team</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-phase">Phase 4 · Week 7 · April 2026</div>
+    <h1 class="hero-title">AI Agents &amp; the <strong>MCP Protocol</strong></h1>
+    <div class="hero-sub">dbean10/doc-qa · PR #28 · claude-sonnet-4-6 · Python 3.11.9 · Next.js 14</div>
+    <div class="hero-tags">
+      <span class="tag tag-teal">MCP stdio/SSE</span>
+      <span class="tag tag-purple">ReAct loop</span>
+      <span class="tag tag-amber">FastMCP 1.27.0</span>
+      <span class="tag tag-coral">Tool criticality tiering</span>
+      <span class="tag tag-green">16/16 evals pass</span>
+      <span class="tag tag-gray">PR #28 merged</span>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+  <!-- OVERVIEW -->
+  <div id="section-overview" class="section">
+    <div class="section-title">Session Stats</div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Evals passed</div>
+        <div class="stat-value">16 / 16</div>
+        <div class="stat-detail">100% — target ≥ 80%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Eval runtime</div>
+        <div class="stat-value">67.6s</div>
+        <div class="stat-detail">13 slow + 3 unit tests</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Agent loops (refund)</div>
+        <div class="stat-value">2 / 5</div>
+        <div class="stat-detail">1 tool call + synthesize</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Agent loops (multi-tool)</div>
+        <div class="stat-value">2 / 5</div>
+        <div class="stat-detail">2 tools in loop 1</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">New files</div>
+        <div class="stat-value">13</div>
+        <div class="stat-detail">1,665 insertions</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">CI runtime</div>
+        <div class="stat-value">43s</div>
+        <div class="stat-detail">PR #28 green</div>
+      </div>
+    </div>
+
+    <div class="section-title">What Week 7 Built</div>
+    <div class="flow">
+      <div class="flow-title">Two paths — same tool implementations</div>
+      <div class="flow-row">
+        <div class="flow-box tag-gray">Claude Desktop</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-amber">MCP protocol (stdio)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-teal">mcp_server.py</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-coral">weather.py / retriever.py / reminder.py</div>
+      </div>
+      <div class="flow-row">
+        <div class="flow-box tag-gray">Browser</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-purple">Next.js /api/agent</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-purple">agent.ts (ReAct)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-teal">Python :8000/tools/*</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-coral">same tool fns</div>
+      </div>
+      <div style="margin-top:12px; font-family: var(--mono); font-size:11px; color:var(--text3);">
+        Tool implementations (weather.py, reminder.py, retriever.py) unchanged since Week 4.
+        Only the transport layer evolved.
+      </div>
+    </div>
+
+    <div class="section-title">Manual Verification — Claude Desktop</div>
+    <table class="data-table">
+      <thead><tr><th>Tool</th><th>Query</th><th>Result</th><th>Time</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><span class="tag tag-teal" style="font-size:10px">get_current_weather</span></td>
+          <td>What's the weather in Denver?</td>
+          <td>62°F, snowy, 31% humidity (deterministic seeded)</td>
+          <td style="font-family:var(--mono)">~35ms</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-purple" style="font-size:10px">search_documents</span></td>
+          <td>Use search_documents to find refund policy</td>
+          <td>3 chunks from refund_policy.txt via Ollama + Chroma</td>
+          <td style="font-family:var(--mono)">1,098ms</td>
+        </tr>
+        <tr>
+          <td><span class="tag tag-amber" style="font-size:10px">save_reminder</span></td>
+          <td>Remind me to review the MCP PR tomorrow at 9am</td>
+          <td>ID f1c04fe9 confirmed</td>
+          <td style="font-family:var(--mono)">~30ms</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">Agent UI — End-to-End Queries</div>
+    <table class="data-table">
+      <thead><tr><th>Query</th><th>Tools called</th><th>Loops</th><th>Steps</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>What is the refund policy?</td>
+          <td>search_documents</td>
+          <td style="font-family:var(--mono)">2 / 5</td>
+          <td style="font-family:var(--mono)">5</td>
+        </tr>
+        <tr>
+          <td>What's the weather in Chicago?</td>
+          <td>get_current_weather</td>
+          <td style="font-family:var(--mono)">2 / 5</td>
+          <td style="font-family:var(--mono)">5</td>
+        </tr>
+        <tr>
+          <td>What is the refund policy and weather in Denver?</td>
+          <td>search_documents + get_current_weather (loop 1)</td>
+          <td style="font-family:var(--mono)">2 / 5</td>
+          <td style="font-family:var(--mono)">7</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div id="section-architecture" class="section" style="display:none">
+    <div class="section-title">Component Map</div>
+
+    <div class="card active" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">lab7/mcp_server.py</div>
+          <div class="card-title">MCP Server — FastMCP</div>
+          <div class="card-sub">stdio (local) · SSE (Cloud Run) · MCP_TRANSPORT env var</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">
+          FastMCP server exposing three tools over stdio (local dev, Claude Desktop) or SSE (production, Cloud Run).
+          Transport selected via MCP_TRANSPORT env var — independent of ENVIRONMENT. Same tool implementations
+          as Week 4 registry.py. The architectural evolution: get_tool_schemas() → list_tools(). dispatch() → call_tool().
+          Only the transport layer is new.
+        </div>
+        <div class="code-block"><span class="cm"># Transport config — mirrors config.py ENVIRONMENT pattern</span>
+<span class="kw">MCP_TRANSPORT</span>: Final[str] = os.<span class="fn">getenv</span>(<span class="st">"MCP_TRANSPORT"</span>, <span class="st">"stdio"</span>)
+
+<span class="cm"># MCP_TRANSPORT=stdio  → local dev, Claude Desktop, test harness</span>
+<span class="cm"># MCP_TRANSPORT=sse    → production, Cloud Run, long-running HTTP</span>
+
+<span class="kw">if</span> __name__ == <span class="st">"__main__"</span>:
+    <span class="kw">if</span> MCP_TRANSPORT == <span class="st">"stdio"</span>:
+        mcp.<span class="fn">run</span>(transport=<span class="st">"stdio"</span>)
+    <span class="kw">elif</span> MCP_TRANSPORT == <span class="st">"sse"</span>:
+        mcp.<span class="fn">run</span>(transport=<span class="st">"sse"</span>, port=<span class="fn">int</span>(os.<span class="fn">getenv</span>(<span class="st">"PORT"</span>, <span class="st">"8080"</span>)))</div>
+        <div class="rules">
+          <div class="rules-title">Invariants</div>
+          <div class="rule">MCP_TRANSPORT is independent of ENVIRONMENT — four valid combinations</div>
+          <div class="rule">Tool implementations (weather.py, reminder.py, retriever.py) unchanged from Week 4</div>
+          <div class="rule">All debug output to stderr — stdout is the MCP JSON-RPC channel in stdio mode</div>
+          <div class="rule">Server instructions include full Tool Failure Protocol for all three tiers</div>
+        </div>
+        <div class="owners">
+          <span class="owner owner-alex">Alex — transport contract</span>
+          <span class="owner owner-morgan">Morgan — failure protocol</span>
+          <span class="owner owner-sam">Sam — tool descriptions</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">lab7/tools_api.py · main.py</div>
+          <div class="card-title">FastAPI Tool HTTP Endpoints</div>
+          <div class="card-sub">/tools/search_docs · /tools/get_weather · /tools/create_reminder</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">
+          HTTP layer exposing tool implementations to the Next.js agent. Mounted at /tools in main.py via APIRouter.
+          Pydantic models validate at the HTTP boundary — type + length bounds — before the tool function applies
+          its own Morgan four-checks. Two validation layers, same as MCP path.
+        </div>
+        <div class="code-block"><span class="kw">class</span> <span class="fn">SearchRequest</span>(BaseModel):
+    query: str = <span class="fn">Field</span>(..., min_length=<span class="co">1</span>, max_length=<span class="co">500</span>)
+
+<span class="co">@router.post</span>(<span class="st">"/search_docs"</span>)
+<span class="kw">def</span> <span class="fn">search_documents</span>(req: SearchRequest) -> dict:
+    <span class="kw">return</span> <span class="fn">search_docs</span>(query=req.query)
+
+<span class="cm"># Same pattern for /get_weather and /create_reminder</span>
+<span class="cm"># Never raises — tool implementations return error dicts</span></div>
+        <div class="rules">
+          <div class="rules-title">Invariants</div>
+          <div class="rule">Pydantic at HTTP boundary + Morgan four-checks inside tool fn = two layers</div>
+          <div class="rule">Never raises — tool fns return error dicts, not exceptions</div>
+          <div class="rule">POST only, JSON in/out — no GET endpoints for tool execution</div>
+        </div>
+        <div class="owners">
+          <span class="owner owner-morgan">Morgan — validation layers</span>
+          <span class="owner owner-sam">Sam — HTTP transport</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">lab5/src/lib/agent.ts</div>
+          <div class="card-title">TypeScript ReAct Agent Loop</div>
+          <div class="card-sub">MAX_AGENT_LOOPS env var · plan → act → observe · hard ceiling enforced</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">
+          The core ReAct loop. Calls Claude with tool definitions, executes tool calls via HTTP to the Python backend,
+          feeds results back into the conversation, repeats until stop_reason == end_turn or MAX_AGENT_LOOPS is hit.
+          Returns structured AgentResult with typed step array for UI and observability.
+        </div>
+        <div class="code-block"><span class="cm">// Loop limit — env var, never hardcoded (design decision)</span>
+<span class="kw">const</span> MAX_AGENT_LOOPS = <span class="fn">parseInt</span>(
+  process.env.<span class="co">MAX_AGENT_LOOPS</span> ?? <span class="st">"5"</span>, <span class="co">10</span>
+);
+
+<span class="kw">while</span> (loopsUsed &lt; MAX_AGENT_LOOPS) {
+  loopsUsed++;
+  <span class="kw">const</span> response = <span class="kw">await</span> client.messages.<span class="fn">create</span>({...});
+
+  <span class="kw">if</span> (response.stop_reason === <span class="st">"end_turn"</span>) { <span class="cm">/* done */</span> <span class="kw">break</span>; }
+  <span class="kw">if</span> (response.stop_reason === <span class="st">"tool_use"</span>)  { <span class="cm">/* execute tools */</span> <span class="kw">continue</span>; }
+}
+<span class="cm">// Loop limit: graceful termination, partial result, never exception</span></div>
+        <div class="rules">
+          <div class="rules-title">Design decisions</div>
+          <div class="rule">MAX_AGENT_LOOPS from env var — adjustable without code change</div>
+          <div class="rule">Loop ceiling owned by agent code — server and model never see this value</div>
+          <div class="rule">Tool failure handled by system prompt tiering — not loop code (Option C)</div>
+          <div class="rule">Loop limit → graceful partial result, never empty string or exception</div>
+          <div class="rule">Every step emitted as typed AgentStep — UI and observability consume same data</div>
+        </div>
+        <div class="owners">
+          <span class="owner owner-alex">Alex — loop contract</span>
+          <span class="owner owner-jordan">Jordan — ceiling enforcement</span>
+          <span class="owner owner-taylor">Taylor — step tracing</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">lab5/src/app/agent/page.tsx</div>
+          <div class="card-title">Agent UI — 7 States</div>
+          <div class="card-sub">Casey Romero · planning → tool_call → tool_result → synthesizing → complete</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">
+          Agent UI renders each step type with a distinct visual treatment. The user never sees a blank screen
+          during multi-step agent work. Each step card is a visual heartbeat — the system explains itself as it works.
+          Loop stats (Loops: 2/5, Steps: 7) provide behavioral transparency.
+        </div>
+        <div class="code-block"><span class="cm">// Casey's 7 states — each maps to a distinct card style</span>
+planning      <span class="cm">// blue  — task received</span>
+tool_call     <span class="cm">// amber — which tool + args</span>
+tool_result   <span class="cm">// green/red — result or error + timing</span>
+synthesizing  <span class="cm">// purple — writing response from gathered info</span>
+complete      <span class="cm">// gray — done</span>
+loop_limit    <span class="cm">// orange — terminated early, partial result</span>
+error         <span class="cm">// red — unexpected loop failure</span></div>
+        <div class="owners">
+          <span class="owner owner-casey">Casey — state vocabulary</span>
+          <span class="owner owner-sam">Sam — implementation</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">lab7/agent_loop.py</div>
+          <div class="card-title">Python Agent Loop — Eval Suite</div>
+          <div class="card-sub">Mirrors agent.ts · in-process tool calls · CI-safe</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="card-desc">
+          Python implementation of the ReAct loop for the eval suite. Calls tool implementations in-process
+          (no HTTP), making tests fast and CI-safe. Structurally identical to agent.ts — same system prompt,
+          same loop limit contract, same step types. Also serves as a CLI tool for local testing.
+        </div>
+        <div class="code-block"><span class="cm"># CLI usage</span>
+ANTHROPIC_API_KEY=$(...) uv run python lab7/agent_loop.py <span class="st">"What is the refund policy?"</span>
+
+<span class="cm"># Loops used: 2/5</span>
+<span class="cm"># Steps: 5</span>
+<span class="cm"># Response: [structured refund policy summary]</span></div>
+        <div class="owners">
+          <span class="owner owner-jordan">Jordan — eval harness</span>
+          <span class="owner owner-sam">Sam — mirrors agent.ts</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REACT LOOP -->
+  <div id="section-react" class="section" style="display:none">
+    <div class="section-title">ReAct Pattern — Plan → Act → Observe</div>
+
+    <div class="flow">
+      <div class="flow-title">Single agent run — refund policy query</div>
+      <div class="flow-row">
+        <div class="flow-box tag-teal">user query</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-purple">planning step</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-amber">Claude API (loop 1)</div>
+      </div>
+      <div class="flow-row" style="padding-left:32px">
+        <div class="flow-arrow">↓</div>
+        <div class="flow-label">stop_reason = "tool_use"</div>
+      </div>
+      <div class="flow-row">
+        <div class="flow-box tag-amber">tool_call step</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-teal">executeTool()</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-teal">Python :8000</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-coral">Chroma retrieval</div>
+      </div>
+      <div class="flow-row">
+        <div class="flow-box tag-green">tool_result step</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-purple">synthesizing step</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-amber">Claude API (loop 2)</div>
+      </div>
+      <div class="flow-row" style="padding-left:32px">
+        <div class="flow-arrow">↓</div>
+        <div class="flow-label">stop_reason = "end_turn"</div>
+      </div>
+      <div class="flow-row">
+        <div class="flow-box tag-gray">complete step</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box tag-teal">AgentResult returned</div>
+        <div class="flow-label">loopsUsed: 2 / 5</div>
+      </div>
+    </div>
+
+    <div class="section-title">Tool Failure Protocol — Criticality Tiering</div>
+
+    <div class="grid-2">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:16px;">
+        <div class="tier tier-1">TIER 1 — CORE</div>
+        <div style="font-size:13px; font-weight:500; color:var(--text); margin-bottom:8px;">search_documents</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.6;">
+          If error returned: immediately stop. Do not attempt workarounds.
+          Do not fabricate. Respond with explicit unavailability message.
+          Research task cannot complete without this tool.
+        </div>
+      </div>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:16px;">
+        <div class="tier tier-2">TIER 2 — SUPPLEMENTARY</div>
+        <div style="font-size:13px; font-weight:500; color:var(--text); margin-bottom:8px;">get_current_weather</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.6;">
+          If error returned: note limitation, continue task.
+          Include "Note: weather data was unavailable" in response.
+          Task can complete without this tool.
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:12px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:16px;">
+      <div class="tier tier-3">TIER 3 — WRITE</div>
+      <div style="font-size:13px; font-weight:500; color:var(--text); margin-bottom:8px;">save_reminder</div>
+      <div style="font-size:12px; color:var(--text2); line-height:1.6;">
+        If error returned: complete research task normally, note failure briefly at end.
+        Does not affect research output quality.
+      </div>
+    </div>
+
+    <div style="margin-top:16px; background:var(--bg2); border:1px solid var(--border); border-left:3px solid var(--coral); border-radius:4px; padding:14px;">
+      <div style="font-family:var(--mono); font-size:10px; color:var(--coral); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em;">Morgan's rule</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        The system prompt makes the right failure response the path of least resistance.
+        Specific instructions prevent model improvisation in error states — and improvisation
+        in error states is where hallucination lives.
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:32px">Traditional vs AI-Native — Agent Orchestration</div>
+    <table class="data-table">
+      <thead><tr><th>Dimension</th><th>Traditional</th><th>AI-Native</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Multi-step task execution</td>
+          <td>Hard-coded workflow. Developer writes branching logic. Every path anticipated at design time.</td>
+          <td>Agent decides which steps to take. Model is the router. New paths emerge from tool composition without new code.</td>
+        </tr>
+        <tr>
+          <td>Tool integration</td>
+          <td>RPC/REST. Developer writes client, handles auth, maps response. Every integration bespoke.</td>
+          <td>MCP. Tool describes itself. Model reads schema and knows how to call it. Same protocol for every tool.</td>
+        </tr>
+        <tr>
+          <td>Stopping condition</td>
+          <td>Explicit — the function returns. The program ends.</td>
+          <td>Must be designed. Without hard loop limit, agent runs indefinitely burning tokens. New failure mode.</td>
+        </tr>
+        <tr>
+          <td>Error recovery</td>
+          <td>Try/catch, retry, raise to caller.</td>
+          <td>Each tool must have explicit failure mode in system prompt. Model will hallucinate without instructions.</td>
+        </tr>
+        <tr>
+          <td>When to use agents</td>
+          <td>Never — deterministic code handles orchestration.</td>
+          <td>Only when: sequence unknown at design time, tool selection requires reasoning, iterative refinement helps.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- MCP SERVER -->
+  <div id="section-mcp" class="section" style="display:none">
+    <div class="section-title">MCP Protocol — Key Concepts</div>
+
+    <div class="grid-2" style="margin-bottom:16px;">
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:16px;">
+        <div style="font-family:var(--mono); font-size:10px; color:var(--teal); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">stdio transport</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.6;">
+          Host spawns server as subprocess. Communicates over stdin/stdout.
+          Used with Claude Desktop. Local dev. MCP_TRANSPORT=stdio.
+          stdout is the JSON-RPC channel — never print to it.
+        </div>
+      </div>
+      <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:16px;">
+        <div style="font-family:var(--mono); font-size:10px; color:var(--purple); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px;">SSE transport</div>
+        <div style="font-size:12px; color:var(--text2); line-height:1.6;">
+          Server runs as long-running HTTP process. Client connects via SSE.
+          Used for Cloud Run. MCP_TRANSPORT=sse. Production path.
+          Same tool implementations — only transport adapter changes.
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Config Matrix — Orthogonal Dimensions</div>
+    <table class="data-table">
+      <thead><tr><th></th><th>MCP_TRANSPORT=stdio</th><th>MCP_TRANSPORT=sse</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>ENVIRONMENT=local</strong></td>
+          <td>Local dev, Claude Desktop testing (primary dev path)</td>
+          <td>Local server, SSE client — integration testing</td>
+        </tr>
+        <tr>
+          <td><strong>ENVIRONMENT=gcp</strong></td>
+          <td>Real Claude, local server — eval validation</td>
+          <td>Full production path (Cloud Run)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-title">Claude Desktop Config — Lessons Learned</div>
+    <div class="card" onclick="toggleCard(this)">
+      <div class="card-header">
+        <div>
+          <div class="card-tag">~/Library/Application Support/Claude/claude_desktop_config.json</div>
+          <div class="card-title">Claude Desktop MCP Configuration</div>
+          <div class="card-sub">Absolute paths required — Claude Desktop launches without shell PATH</div>
+        </div>
+        <div class="card-chevron">▼</div>
+      </div>
+      <div class="card-body">
+        <div class="code-block">{
+  <span class="st">"mcpServers"</span>: {
+    <span class="st">"doc-qa"</span>: {
+      <span class="st">"command"</span>: <span class="st">"/Users/davidbean/.local/bin/uv"</span>,  <span class="cm">// absolute path — not "uv"</span>
+      <span class="st">"args"</span>: [<span class="st">"run"</span>, <span class="st">"--directory"</span>, <span class="st">"/Users/davidbean/projects/doc-qa"</span>,
+               <span class="st">"python"</span>, <span class="st">"-m"</span>, <span class="st">"lab7.mcp_server"</span>],
+      <span class="st">"env"</span>: {
+        <span class="st">"MCP_TRANSPORT"</span>: <span class="st">"stdio"</span>,
+        <span class="st">"ENVIRONMENT"</span>: <span class="st">"local"</span>
+      }
+    }
+  }
+}</div>
+        <div class="rules">
+          <div class="rules-title">Gotchas from this session</div>
+          <div class="rule">Config file is ~/Library (home dir), not /Library (system) — two different locations</div>
+          <div class="rule">uv path must be absolute — Claude Desktop launches without shell PATH</div>
+          <div class="rule">No mcp-server-doc-qa.log = Claude Desktop never attempted to launch server (config not found or invalid JSON)</div>
+          <div class="rule">Fully Quit (Cmd+Q) required after config edit — closing window is not enough</div>
+          <div class="rule">Validate JSON before relaunching: cat config.json | python3 -m json.tool</div>
+          <div class="rule">Expose a PAT in the terminal output — rotate immediately, diagnose second</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:24px">MCP Handshake — Verified Log</div>
+    <div class="code-block"><span class="cm">14:29:55  Server started and connected successfully</span>
+<span class="cm">14:29:56  Claude Desktop → initialize (protocol 2025-11-25)</span>
+<span class="cm">14:29:57  Server → capabilities + instructions sent</span>
+<span class="cm">14:29:57  Claude Desktop → tools/list</span>
+<span class="cm">14:29:57  Server → 3 tools returned with full schemas:</span>
+          <span class="gn">✓ search_documents</span>
+          <span class="gn">✓ get_current_weather</span>
+          <span class="gn">✓ save_reminder</span>
+
+<span class="cm">14:36:54  tools/call get_current_weather {location: "Denver, CO"}</span>
+<span class="cm">14:36:54  → {"temperature_f": 62, "condition": "snowy", "humidity_pct": 31}</span>
+
+<span class="cm">14:41:54  tools/call search_documents {query: "refund policy"}</span>
+<span class="cm">14:41:57  → Ollama embeddings HTTP 200 → 3 chunks from refund_policy.txt</span>
+
+<span class="cm">14:45:01  tools/call save_reminder {text: "Review the MCP PR", time: "2026-04-18T09:00:00"}</span>
+<span class="cm">14:45:01  → {"id": "f1c04fe9", "created_at": "2026-04-17T14:45:01"}</span></div>
+  </div>
+
+  <!-- EVALS -->
+  <div id="section-evals" class="section" style="display:none">
+    <div class="section-title">Eval Suite — 16 Tests, 4 Categories</div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">Unit tests</div>
+        <div class="stat-value">3</div>
+        <div class="stat-detail">0 API calls · 0.82s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Slow tests</div>
+        <div class="stat-value">13</div>
+        <div class="stat-detail">real Claude · 67.6s</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">Pass rate</div>
+        <div class="stat-value">100%</div>
+        <div class="stat-detail">target ≥ 80%</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">CI filter</div>
+        <div class="stat-value">-m slow</div>
+        <div class="stat-detail">excluded from standard job</div>
+      </div>
+    </div>
+
+    <table class="data-table">
+      <thead><tr><th>Category</th><th>Tests</th><th>What's Asserted</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Unit — allowlist</td>
+          <td style="font-family:var(--mono)">3</td>
+          <td>Unknown tool names rejected, never executed. All 3 valid names in registry.</td>
+          <td><span style="color:var(--green); font-family:var(--mono)">3 / 3 ✓</span></td>
+        </tr>
+        <tr>
+          <td>Structural guarantees</td>
+          <td style="font-family:var(--mono)">4</td>
+          <td>planning first, finalResponse never empty, loopsUsed ≤ maxLoops, all step types valid.</td>
+          <td><span style="color:var(--green); font-family:var(--mono)">4 / 4 ✓</span></td>
+        </tr>
+        <tr>
+          <td>Tool routing</td>
+          <td style="font-family:var(--mono)">4</td>
+          <td>Document query → search_documents. Weather → get_current_weather. Reminder → save_reminder. Multi-tool → both called.</td>
+          <td><span style="color:var(--green); font-family:var(--mono)">4 / 4 ✓</span></td>
+        </tr>
+        <tr>
+          <td>Loop limit</td>
+          <td style="font-family:var(--mono)">3</td>
+          <td>max_loops=1 forces termination. loop_limit step present when terminatedEarly. Normal task completes under limit.</td>
+          <td><span style="color:var(--green); font-family:var(--mono)">3 / 3 ✓</span></td>
+        </tr>
+        <tr>
+          <td>Failure modes</td>
+          <td style="font-family:var(--mono)">2</td>
+          <td>Tier 1 error → unavailability language in response, no fabrication. Tier 2 error → agent continues, produces response.</td>
+          <td><span style="color:var(--green); font-family:var(--mono)">2 / 2 ✓</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:16px; background:var(--bg2); border:1px solid var(--border); border-left:3px solid var(--amber); border-radius:4px; padding:14px;">
+      <div style="font-family:var(--mono); font-size:10px; color:var(--amber); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.08em;">Jordan's note on the slow marker</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        The <code style="font-family:var(--mono); background:var(--bg); padding:1px 5px; border-radius:2px;">slow</code> marker is now registered in pyproject.toml.
+        CI runs <code style="font-family:var(--mono); background:var(--bg); padding:1px 5px; border-radius:2px;">-m "not integration and not eval and not slow"</code>.
+        Slow tests proved themselves locally against real Claude — they don't need to re-run on every PR.
+        The pattern is established for any future test requiring real API calls.
+      </div>
+    </div>
+  </div>
+
+  <!-- DOD -->
+  <div id="section-dod" class="section" style="display:none">
+    <div class="section-title">Definition of Done — Sign-offs</div>
+    <table class="dod-table">
+      <tbody>
+        <tr>
+          <td style="width:48px"><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">Agent completes research task end-to-end without human intervention</span><br>
+            <span class="dod-detail">Three queries verified: refund policy (2 loops), weather Chicago (2 loops), multi-tool Denver (2 loops, 7 steps). All grounded in tool results.</span></td>
+          <td style="width:80px"><span class="owner owner-alex dod-owner">Alex</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">Hard loop limit enforced — agent cannot run indefinitely</span><br>
+            <span class="dod-detail">3/3 loop limit tests pass. test_loop_limit_enforced and test_loop_limit_terminates_gracefully both green. Ceiling is real, not aspirational.</span></td>
+          <td><span class="owner owner-alex dod-owner">Alex</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">Each tool has explicit failure mode — no hallucinated fallbacks</span><br>
+            <span class="dod-detail">Tier 1/2/3 protocol in system prompt. test_search_error_stops_agent and test_weather_error_continues both pass. Failure responses specific and exhaustive.</span></td>
+          <td><span class="owner owner-morgan dod-owner">Morgan</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">16 eval tests pass — success rate ≥ 80%</span><br>
+            <span class="dod-detail">16/16 passed (100%). 3 unit tests at 0.82s. 13 slow tests at 67.6s against claude-sonnet-4-6.</span></td>
+          <td><span class="owner owner-jordan dod-owner">Jordan</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">MCP server reusable — not hardcoded to this agent</span><br>
+            <span class="dod-detail">Claude Desktop connects independently of the Next.js agent. Any MCP-compatible host can use the server. Tool descriptions are general-purpose.</span></td>
+          <td><span class="owner owner-alex dod-owner">Alex</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">Agent observability — tool calls traced in Turso</span><br>
+            <span class="dod-detail">Every /api/agent request logged with loopsUsed, terminatedEarly, stepCount in metadata. Distinct prompt_hash for agent system prompt. inputTokens: 0 deferred to Week 8.</span></td>
+          <td><span class="owner owner-taylor dod-owner">Taylor</span></td>
+        </tr>
+        <tr>
+          <td><span class="dod-check">✓</span></td>
+          <td><span class="dod-gate">CI green — PR #28 squash merged to main</span><br>
+            <span class="dod-detail">43s CI runtime. Ruff clean after 2 fix commits (unused imports, noqa E402). slow marker excluded from standard CI job.</span></td>
+          <td><span class="owner owner-jordan dod-owner">Jordan</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- FINDINGS -->
+  <div id="section-findings" class="section" style="display:none">
+    <div class="section-title">Key Findings</div>
+
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:20px; margin-bottom:16px;">
+      <div style="font-family:var(--mono); font-size:11px; color:var(--teal); margin-bottom:10px;">Finding 1 — The registry pattern from Week 4 is an MCP server without the network boundary</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        REGISTRY maps names to schemas and callables. get_tool_schemas() becomes list_tools(). dispatch() becomes call_tool().
+        The tool implementation files (weather.py, reminder.py, retriever.py) were untouched.
+        Only the transport layer is new. This is what clean architecture buys across eight weeks of iteration.
+        When new capabilities layer on top without changing what is already working, architecture is doing its job.
+      </div>
+    </div>
+
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:20px; margin-bottom:16px;">
+      <div style="font-family:var(--mono); font-size:11px; color:var(--teal); margin-bottom:10px;">Finding 2 — MCP_TRANSPORT and ENVIRONMENT are orthogonal — coupling them would cost flexibility</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        The urge is to make MCP_TRANSPORT a derived value from ENVIRONMENT. Resist it. You need
+        ENVIRONMENT=gcp MCP_TRANSPORT=stdio to run eval validation against real Claude with a local server.
+        Two dimensions, two env vars. The config.py pattern from Week 1 applies: one switch per independently
+        variable thing. This is the bootcamp's recurring lesson: architectural decisions at the seams matter more
+        than implementation decisions inside components.
+      </div>
+    </div>
+
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:20px; margin-bottom:16px;">
+      <div style="font-family:var(--mono); font-size:11px; color:var(--teal); margin-bottom:10px;">Finding 3 — stdout in stdio mode is a protocol channel, not a debug console</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        In stdio transport, stdout is the MCP JSON-RPC channel. Any print() to stdout corrupts the protocol
+        and produces cryptic failures. All debug output must go to stderr: print("...", file=sys.stderr).
+        This is a new constraint that doesn't exist in traditional server development. The rule:
+        in any stdio-transport server, treat stdout as a binary protocol channel, never a log sink.
+      </div>
+    </div>
+
+    <div style="background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:20px; margin-bottom:16px;">
+      <div style="font-family:var(--mono); font-size:11px; color:var(--teal); margin-bottom:10px;">Finding 4 — Agent eval structure differs fundamentally from deterministic evals</div>
+      <div style="font-size:13px; color:var(--text2); line-height:1.6;">
+        The 20% of agent evals that can be exact assertions are the most valuable: structural guarantees
+        (planning first, response never empty), loop limit enforcement (loopsUsed ≤ maxLoops), and
+        failure mode injection (inject error dict, assert response contains unavailability language).
+        The 80% that require probabilistic scoring — did the model choose the right tool? — still use
+        substring matching on tool names in the step array, not prose quality scoring.
+        The step structure makes this mechanical. Design your data structures for testability.
+      </div>
+    </div>
+
+    <div class="section-title" style="margin-top:32px">Tips, Gotchas &amp; Things to Remember</div>
+    <table class="data-table">
+      <thead><tr><th>Rule</th><th>Detail</th></tr></thead>
+      <tbody>
+        <tr><td>stdout is a protocol channel in stdio mode</td><td>Never print() to stdout in an MCP server. Use print(..., file=sys.stderr) for all debug output.</td></tr>
+        <tr><td>Claude Desktop config path</td><td>~/Library (home dir), not /Library (system). Two different locations. Validate JSON before relaunching.</td></tr>
+        <tr><td>Absolute paths in Claude Desktop config</td><td>uv, npx, node must be absolute paths. Claude Desktop launches without shell PATH.</td></tr>
+        <tr><td>MAX_AGENT_LOOPS as env var</td><td>Never hardcode. Adjustable per deployment without code change. Default 5 is conservative.</td></tr>
+        <tr><td>Tool failure in system prompt, not loop code</td><td>Option C: system prompt owns rules, model executes them. Specific instructions prevent improvisation in error states.</td></tr>
+        <tr><td>Tool criticality tiering</td><td>Not all tool failures are equal. Core tools stop the agent. Supplementary tools let it continue. Encode this explicitly.</td></tr>
+        <tr><td>Slow marker in pytest</td><td>Register in pyproject.toml. Exclude from CI with -m "not slow". Run locally with real API key.</td></tr>
+        <tr><td>Rotate before diagnosing</td><td>Any credential exposed in terminal output — rotate immediately, diagnose cause second.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="section-title" style="margin-top:32px">Known Limitations — Carried to Week 8</div>
+    <table class="data-table">
+      <thead><tr><th>Limitation</th><th>Risk</th><th>Planned Remediation</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>inputTokens: 0 for agent runs</td>
+          <td>Low — multi-turn token counting not implemented. Dashboard shows zero for agent requests.</td>
+          <td>Sum tokens across all loop iterations. Week 8 candidate.</td>
+        </tr>
+        <tr>
+          <td>Python backend HTTP unauthenticated</td>
+          <td>Medium — /tools/* endpoints have no auth. HMAC deferred from Week 7.</td>
+          <td>HMAC request signing between Next.js and Cloud Run. Week 8 candidate.</td>
+        </tr>
+        <tr>
+          <td>PYTHON_BACKEND_URL not set in Vercel</td>
+          <td>High — agent UI will fail in production. Only tested locally.</td>
+          <td>Add to Vercel env vars + redeploy before Week 8.</td>
+        </tr>
+        <tr>
+          <td>Smoke test WIF fix not formalized</td>
+          <td>Low — direct push to main, no PR. Works but violates branch protection intent.</td>
+          <td>Formalize via PR. Week 8 candidate.</td>
+        </tr>
+        <tr>
+          <td>All prior Week 6 limitations</td>
+          <td>Unchanged</td>
+          <td>PII regex, Next.js CVEs, ts-jest mismatch — all carry forward.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TEAM COMMENTARY -->
+  <div id="section-commentary" class="section" style="display:none">
+    <div class="section-title">Team Commentary</div>
+    <div class="commentary">
+      <div class="comment-card" style="border-left-color: var(--purple);">
+        <div class="comment-who" style="color:var(--purple)">Alex Chen · Principal AI Systems Architect</div>
+        <div class="comment-text">
+          Architecture contract held end to end. The registry pattern from Week 4 became an MCP server.
+          The MCP server became HTTP endpoints. The HTTP endpoints became agent tools. The agent loop became a UI.
+          Nothing below the transport layer changed at any step. get_tool_schemas() → list_tools(). dispatch() → call_tool().
+          Tool implementations: untouched since Week 4. The MCP_TRANSPORT / ENVIRONMENT orthogonal config is the right pattern —
+          four deployment combinations, zero code changes between them. Two dimensions, two switches.
+          This is what we designed for from the beginning.
+        </div>
+      </div>
+      <div class="comment-card" style="border-left-color: var(--coral);">
+        <div class="comment-who" style="color:var(--coral)">Morgan Blake · AI Security &amp; Trust Engineer</div>
+        <div class="comment-text">
+          Three security properties confirmed this week. First: the allowlist in execute_tool — hallucinated tool names
+          cannot execute, same contract as registry.py dispatch(). Second: tool criticality tiering in the system prompt —
+          failure instructions are specific and exhaustive, no open-ended language that invites improvisation.
+          Third: AbortSignal.timeout on every HTTP call — a hung backend cannot hang the agent loop indefinitely.
+          The Tier 1/2/3 failure tests both passed, which means the model follows the failure protocol as written.
+          One note: the Python backend HTTP endpoints are currently unauthenticated. HMAC is Week 8.
+          Do not deploy this to production without it.
+        </div>
+      </div>
+      <div class="comment-card" style="border-left-color: var(--amber);">
+        <div class="comment-who" style="color:var(--amber)">Jordan Rivera · AI Quality &amp; Reliability Engineer</div>
+        <div class="comment-text">
+          16/16. 100% against a ≥80% target. The loop limit tests are the ones I care most about —
+          they proved the hard ceiling is real. The slow marker pattern is now established for any future
+          test requiring real API calls: prove it locally, exclude from CI, run in dedicated eval jobs.
+          The step structure makes agent evals mechanical: I assert tool names in the step array,
+          not prose quality. Design your data structures for testability before you design for features.
+          One carry-forward: the failure mode mock in test_weather_error_continues uses a fragile
+          side_effect pattern. Week 8 should refactor to a cleaner mock approach.
+        </div>
+      </div>
+      <div class="comment-card" style="border-left-color: var(--green);">
+        <div class="comment-who" style="color:var(--green)">Taylor Nguyen · AI Platform &amp; DevOps Engineer</div>
+        <div class="comment-text">
+          Every agent run now logs loopsUsed, terminatedEarly, and stepCount to Turso.
+          The prompt_hash for the agent system prompt is distinct from the chat system prompt —
+          two separate behavioral baselines in the dashboard. Known gap: inputTokens is 0 for all agent runs.
+          A 2-loop agent run costs significantly more than a single call and the dashboard should reflect that.
+          Multi-turn token summation is the Week 8 fix. Also: the CI filter for slow tests is now
+          -m "not integration and not eval and not slow" — this is the permanent pattern for
+          any test that requires a production API key.
+        </div>
+      </div>
+      <div class="comment-card" style="border-left-color: #d4a0f0;">
+        <div class="comment-who" style="color:#d4a0f0">Casey Romero · AI Experience Designer</div>
+        <div class="comment-text">
+          Seven states, all rendering correctly. The user never saw a blank screen during a multi-step agent task.
+          The key design principle confirmed by this week: AI states before UI components.
+          I mapped the seven states — planning, tool_call, tool_result, synthesizing, complete,
+          loop_limit, error — before a single line of React was written. Each state has a color,
+          an icon, and a distinct information hierarchy. The loop stats (Loops: 2/5, Steps: 7)
+          give the user behavioral transparency without overwhelming them.
+          Transparency about the model's work is part of good AI UX.
+        </div>
+      </div>
+      <div class="comment-card" style="border-left-color: var(--teal);">
+        <div class="comment-who" style="color:var(--teal)">Sam Park · Product-Minded AI Engineer</div>
+        <div class="comment-text">
+          The system prompt stopping condition — "when you have enough information, stop calling tools
+          and write your response" — is the single line that prevented runaway loops in every test query.
+          The multi-tool query used exactly 2 loops: one to gather from both tools simultaneously, one to synthesize.
+          No unnecessary iterations. This is the Week 7 implementation lesson:
+          the system prompt is still the highest-leverage artifact in the entire stack.
+          An agent with a clear stopping condition and explicit tool failure instructions
+          is more reliable than an agent with more sophisticated loop logic.
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showSection(id) {
+    document.querySelectorAll('[id^="section-"]').forEach(s => s.style.display = 'none');
+    document.getElementById('section-' + id).style.display = 'block';
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  function toggleCard(card) {
+    card.classList.toggle('active');
+  }
+</script>
+</body>
+</html>
