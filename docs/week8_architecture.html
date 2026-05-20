@@ -1,0 +1,1416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Week 8 — Capstone Architecture · CTO Compass</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #0e1117;
+    --bg2:       #151b26;
+    --bg3:       #1c2535;
+    --border:    #2a3548;
+    --border2:   #3a4a62;
+    --text:      #c8d4e8;
+    --text2:     #7a8fa8;
+    --text3:     #4a5f78;
+    --purple:    #7c6af7;
+    --purple-bg: #1e1a3a;
+    --purple-bd: #3d3580;
+    --teal:      #2dd4a0;
+    --teal-bg:   #0f2822;
+    --teal-bd:   #1a5040;
+    --coral:     #f07050;
+    --coral-bg:  #2a1810;
+    --coral-bd:  #6a3020;
+    --gray:      #8899aa;
+    --gray-bg:   #161e2a;
+    --gray-bd:   #2a3548;
+    --amber:     #f0b030;
+    --amber-bg:  #2a1e08;
+    --amber-bd:  #5a3e10;
+    --green:     #50d080;
+    --green-bg:  #0f2a18;
+    --green-bd:  #1a5030;
+    --pink:      #e070b8;
+    --pink-bg:   #2a1525;
+    --pink-bd:   #5a2a50;
+    --mono:      'IBM Plex Mono', monospace;
+    --sans:      'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0 0 80px;
+  }
+
+  /* ── Nav ── */
+  .nav {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-inner {
+    max-width: 1080px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 48px;
+    overflow-x: auto;
+  }
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    margin-right: 16px;
+    white-space: nowrap;
+  }
+  .nav-brand span { color: var(--coral); }
+  .nav-link {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    color: var(--text2);
+    text-decoration: none;
+    transition: all 0.15s;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .nav-link:hover { background: var(--bg3); border-color: var(--border2); color: var(--text); }
+  .nav-link.active { background: var(--coral-bg); border-color: var(--coral-bd); color: var(--coral); }
+  .nav-link.ext { margin-left: auto; color: var(--amber); border-color: var(--amber-bd); background: var(--amber-bg); }
+  .nav-link.ext:hover { border-color: var(--amber); }
+  .nav-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; flex-shrink: 0; }
+
+  /* ── Header ── */
+  .header {
+    max-width: 1080px;
+    margin: 40px auto 32px;
+    padding: 0 0 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .header h1 { font-size: 28px; font-weight: 500; color: #e8f0ff; letter-spacing: -0.02em; }
+  .header h1 span { color: var(--coral); }
+  .header-sub { margin-top: 8px; font-size: 13px; color: var(--text2); font-weight: 300; }
+  .header-prod {
+    margin-top: 16px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .header-prod a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    background: var(--green-bg);
+    border: 1px solid var(--green-bd);
+    padding: 4px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+  .header-prod a:hover { border-color: var(--green); }
+  .header-prod span { font-family: var(--mono); font-size: 11px; color: var(--text3); padding: 4px 0; }
+
+  /* ── Section ── */
+  .section {
+    max-width: 1080px;
+    margin: 32px auto 0;
+    padding: 0 0;
+  }
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 0 4px;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: #e8f0ff;
+    letter-spacing: -0.01em;
+  }
+  .section-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin: 0 0 18px 4px;
+    font-weight: 300;
+    line-height: 1.6;
+  }
+
+  /* ── Layout ── */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* ── Diagram panel ── */
+  .panel {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+  .layer-label {
+    font-family: var(--mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; padding-left: 2px;
+  }
+  .layer { margin-bottom: 8px; }
+  .row-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; }
+  .row-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+  .row-6 { display: grid; grid-template-columns: repeat(6,1fr); gap: 6px; }
+
+  .connectors {
+    display: flex; justify-content: space-around; padding: 0 20px;
+    height: 28px; align-items: center;
+  }
+  .connector-line {
+    width: 1px; height: 28px; background: var(--border2); position: relative;
+  }
+  .connector-line::after {
+    content: ''; position: absolute; bottom: -4px; left: -3px;
+    width: 0; height: 0;
+    border-left: 4px solid transparent; border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+  .connector-line.up::after {
+    content: ''; position: absolute; top: -4px; bottom: auto; left: -3px;
+    border-top: none;
+    border-bottom: 5px solid var(--border2);
+  }
+  .connector-label {
+    font-family: var(--mono); font-size: 9px; color: var(--text3);
+    text-align: center; margin: 2px 0 4px; letter-spacing: 0.06em;
+  }
+
+  /* ── Nodes ── */
+  .node {
+    border-radius: 8px; padding: 10px 14px; cursor: pointer;
+    transition: all 0.15s ease; border: 1px solid transparent; position: relative;
+  }
+  .node:hover { transform: translateY(-1px); }
+  .node.active { transform: translateY(-1px); }
+  .node-title { font-family: var(--mono); font-size: 12px; font-weight: 600; letter-spacing: -0.01em; }
+  .node-sub   { font-size: 11px; font-weight: 300; margin-top: 2px; opacity: 0.7; }
+
+  .node-gray   { background: var(--gray-bg);   border-color: var(--gray-bd); }
+  .node-gray   .node-title { color: var(--gray); }
+  .node-gray:hover, .node-gray.active { border-color: var(--gray); background: #1e2a38; }
+
+  .node-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .node-purple .node-title { color: var(--purple); }
+  .node-purple:hover, .node-purple.active { border-color: var(--purple); background: #251f48; }
+
+  .node-teal   { background: var(--teal-bg);   border-color: var(--teal-bd); }
+  .node-teal   .node-title { color: var(--teal); }
+  .node-teal:hover, .node-teal.active { border-color: var(--teal); background: #132e25; }
+
+  .node-coral  { background: var(--coral-bg);  border-color: var(--coral-bd); }
+  .node-coral  .node-title { color: var(--coral); }
+  .node-coral:hover, .node-coral.active { border-color: var(--coral); background: #321a10; }
+
+  .node-amber  { background: var(--amber-bg);  border-color: var(--amber-bd); }
+  .node-amber  .node-title { color: var(--amber); }
+  .node-amber:hover, .node-amber.active { border-color: var(--amber); background: #321f08; }
+
+  .node-green  { background: var(--green-bg);  border-color: var(--green-bd); }
+  .node-green  .node-title { color: var(--green); }
+  .node-green:hover, .node-green.active { border-color: var(--green); background: #132e1c; }
+
+  .node-pink   { background: var(--pink-bg);   border-color: var(--pink-bd); }
+  .node-pink   .node-title { color: var(--pink); }
+  .node-pink:hover, .node-pink.active { border-color: var(--pink); background: #341a2d; }
+
+  /* container nodes */
+  .container-node {
+    border-radius: 10px; padding: 14px 16px; border: 1px solid; margin-bottom: 8px;
+  }
+  .container-node .container-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px;
+  }
+  .container-node .inner-grid { display: grid; gap: 6px; }
+  .container-node .inner-grid.cols-2 { grid-template-columns: repeat(2,1fr); }
+  .container-node .inner-grid.cols-3 { grid-template-columns: repeat(3,1fr); }
+  .container-node .inner-grid.cols-6 { grid-template-columns: repeat(6,1fr); }
+
+  .cn-teal   { background: var(--teal-bg);   border-color: var(--teal-bd);   }
+  .cn-teal   .container-title { color: var(--teal); }
+  .cn-purple { background: var(--purple-bg); border-color: var(--purple-bd); }
+  .cn-purple .container-title { color: var(--purple); }
+  .cn-coral  { background: var(--coral-bg);  border-color: var(--coral-bd);  }
+  .cn-coral  .container-title { color: var(--coral); }
+  .cn-amber  { background: var(--amber-bg);  border-color: var(--amber-bd);  }
+  .cn-amber  .container-title { color: var(--amber); }
+
+  /* arrow between containers */
+  .arrow-h {
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text3); font-family: var(--mono); font-size: 16px;
+  }
+
+  /* seam visualization */
+  .seam-grid {
+    display: grid;
+    grid-template-columns: 1fr 60px 1fr;
+    gap: 8px;
+    align-items: stretch;
+  }
+  .seam-col {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+  }
+  .seam-col-label {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .seam-col.ai .seam-col-label { color: var(--coral); }
+  .seam-col.det .seam-col-label { color: var(--teal); }
+  .seam-row {
+    font-family: var(--sans); font-size: 12px;
+    color: var(--text); padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .seam-row:last-child { border-bottom: none; }
+  .seam-divider {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 6px;
+  }
+  .seam-divider-line {
+    width: 1px; flex: 1;
+    background: linear-gradient(to bottom, var(--coral), var(--amber), var(--teal));
+    opacity: 0.5;
+  }
+  .seam-divider-label {
+    font-family: var(--mono); font-size: 9px;
+    color: var(--amber); letter-spacing: 0.1em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    padding: 8px 0;
+  }
+
+  /* fanout viz for company tab */
+  .fanout {
+    display: grid;
+    grid-template-rows: auto auto auto;
+    gap: 12px;
+  }
+  .fanout-input {
+    margin: 0 auto;
+    padding: 10px 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--text);
+    text-align: center;
+  }
+  .fanout-fan {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 6px;
+  }
+  .fanout-line {
+    height: 24px; position: relative;
+  }
+  .fanout-line::before {
+    content: ''; position: absolute;
+    left: 50%; top: 0; width: 1px; height: 100%;
+    background: var(--border2);
+  }
+  .fanout-line::after {
+    content: ''; position: absolute;
+    left: calc(50% - 3px); bottom: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid var(--border2);
+  }
+  .fanout-output {
+    margin: 8px auto 0;
+    padding: 10px 24px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    font-family: var(--mono); font-size: 12px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  /* sequence diagram for architecture tab */
+  .seq {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px 18px;
+    align-items: start;
+  }
+  .seq-step {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--coral);
+    background: var(--coral-bg);
+    border: 1px solid var(--coral-bd);
+    border-radius: 50%;
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* latent defect callout */
+  .defect-panel {
+    background: linear-gradient(135deg, #2a1818 0%, #1c2535 100%);
+    border: 1px solid var(--coral-bd);
+    border-radius: 10px;
+    padding: 28px 24px;
+  }
+  .defect-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin: 18px 0;
+  }
+  .defect-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .defect-card-num {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--coral); letter-spacing: 0.1em;
+    margin-bottom: 6px;
+  }
+  .defect-card-title {
+    font-family: var(--mono); font-size: 12px;
+    font-weight: 600; color: var(--text); margin-bottom: 8px;
+  }
+  .defect-card-mech {
+    font-size: 12px; color: var(--text2); font-weight: 300;
+    line-height: 1.5;
+  }
+  .defect-proof {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--teal);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--teal);
+    line-height: 1.7;
+    margin-top: 14px;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .defect-principle {
+    margin: 14px 0 0;
+    padding: 14px 16px;
+    background: var(--bg2);
+    border: 1px solid var(--amber-bd);
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--amber);
+    font-family: var(--mono);
+    text-align: center;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── Detail panel ── */
+  .detail-panel {
+    position: sticky; top: 60px;
+    background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; min-height: 400px;
+  }
+  .detail-placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    height: 400px; gap: 12px; color: var(--text3); padding: 20px;
+  }
+  .detail-placeholder .icon { font-size: 32px; opacity: 0.4; }
+  .detail-placeholder p { font-size: 12px; text-align: center; line-height: 1.6; font-weight: 300; }
+  #detail-content { display: none; animation: fadeIn 0.18s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .detail-header { padding: 16px 20px 14px; border-bottom: 1px solid var(--border); }
+  .detail-tag { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 6px; }
+  .detail-title { font-family: var(--mono); font-size: 15px; font-weight: 600; }
+  .detail-subtitle { font-size: 12px; color: var(--text2); font-weight: 300; margin-top: 4px; }
+  .detail-body { padding: 18px 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section:last-child { margin-bottom: 0; }
+  .detail-section-label { font-family: var(--mono); font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .detail-desc { font-size: 13px; color: var(--text); line-height: 1.65; font-weight: 300; }
+  .detail-code {
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 6px;
+    padding: 12px 14px; font-family: var(--mono); font-size: 11px; color: #a8c0e0;
+    line-height: 1.7; white-space: pre; overflow-x: auto;
+  }
+  .detail-code .kw  { color: var(--purple); }
+  .detail-code .fn  { color: var(--teal); }
+  .detail-code .st  { color: var(--amber); }
+  .detail-code .cm  { color: var(--text3); }
+  .detail-code .co  { color: var(--coral); }
+  .detail-rules { list-style: none; }
+  .detail-rules li {
+    font-size: 12px; color: var(--text2); padding: 5px 0;
+    border-bottom: 1px solid var(--border); font-weight: 300;
+    display: flex; gap: 8px; align-items: baseline; line-height: 1.5;
+  }
+  .detail-rules li:last-child { border-bottom: none; }
+  .detail-rules li::before { content: '→'; color: var(--text3); flex-shrink: 0; font-family: var(--mono); font-size: 11px; }
+
+  .owner-tag {
+    display: inline-block; font-family: var(--mono); font-size: 10px;
+    padding: 1px 7px; border-radius: 3px; margin-right: 6px;
+  }
+  .owner-alex   { background: #1a2a3a; color: #60a0d0; border: 1px solid #2a4060; }
+  .owner-morgan { background: #2a1818; color: #d07070; border: 1px solid #4a2828; }
+  .owner-jordan { background: #1a2a1a; color: #60c060; border: 1px solid #2a4a2a; }
+  .owner-casey  { background: #2a1a2a; color: #c060c0; border: 1px solid #4a2a4a; }
+  .owner-sam    { background: #1a2218; color: #80c050; border: 1px solid #2a4020; }
+  .owner-riley  { background: #1a2230; color: #70a0e0; border: 1px solid #2a3a5a; }
+  .owner-taylor { background: #2a2010; color: #e0a040; border: 1px solid #4a3818; }
+
+  /* ── Legend ── */
+  .legend {
+    max-width: 1080px; margin: 32px auto 0;
+    display: flex; gap: 20px; flex-wrap: wrap;
+    padding: 16px 24px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 8px;
+    font-size: 12px; color: var(--text2);
+  }
+  .legend-item { display: flex; align-items: center; gap: 8px; }
+  .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  .page { padding: 0 24px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <span class="nav-brand">doc-qa · <span>dbean10</span></span>
+    <a class="nav-link" href="week1_architecture.html">W1</a>
+    <a class="nav-link" href="week2_architecture.html">W2</a>
+    <a class="nav-link" href="week3_architecture.html">W3</a>
+    <a class="nav-link" href="week4_architecture.html">W4</a>
+    <a class="nav-link" href="week5_architecture.html">W5</a>
+    <a class="nav-link" href="week6_architecture.html">W6</a>
+    <a class="nav-link" href="week7_architecture.html">W7</a>
+    <a class="nav-link active" href="week8_architecture.html">W8 · Capstone</a>
+    <div class="nav-divider"></div>
+    <a class="nav-link" href="cicd_pipeline.html">CI/CD</a>
+    <a class="nav-link ext" href="https://cto-compass-pink.vercel.app" target="_blank">↗ live product</a>
+  </div>
+</nav>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-meta">Phase 4 — Agents, MCP &amp; Shipping a Product · Week 8 · May 2026</div>
+  <h1>CTO Compass <span>— Capstone Architecture · click any component</span></h1>
+  <div class="header-sub">Next.js 14 on Vercel · FastAPI on Cloud Run · Anthropic claude-sonnet-4-6 · Turso · dbean10/cto-compass</div>
+  <div class="header-prod">
+    <a href="https://cto-compass-pink.vercel.app" target="_blank">↗ Product (basic auth)</a>
+    <a href="https://github.com/dbean10/cto-compass" target="_blank">↗ Repo</a>
+    <span>API: cto-compass-api-523650692537.us-central1.run.app</span>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 1 — System Map                                       -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">01</span>
+    <span class="section-title">System Map — Vercel ↔ Cloud Run</span>
+  </div>
+  <div class="section-sub">
+    Two deployment targets, one architectural seam. The split is the highest-level decision in CTO Compass: short-lived UI work goes to Vercel, long-running AI work goes to Cloud Run. SSE is the connection contract between them.
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+
+      <div class="layer-label">browser</div>
+      <div class="row-2" style="margin-bottom: 4px">
+        <div class="node node-gray" onclick="show('user-company')">
+          <div class="node-title">User · Company tab</div>
+          <div class="node-sub">enters a company name</div>
+        </div>
+        <div class="node node-gray" onclick="show('user-arch')">
+          <div class="node-title">User · Architecture tab</div>
+          <div class="node-sub">pastes a GitHub URL</div>
+        </div>
+      </div>
+
+      <div class="connectors"><div class="connector-line"></div></div>
+
+      <div class="layer-label">Vercel — Next.js 14 frontend (App Router)</div>
+      <div class="container-node cn-teal">
+        <div class="container-title">cto-compass · src/app/</div>
+        <div class="inner-grid cols-3">
+          <div class="node node-teal" onclick="show('middleware')">
+            <div class="node-title">middleware.ts</div>
+            <div class="node-sub">basic auth gate</div>
+          </div>
+          <div class="node node-teal" onclick="show('company-ui')">
+            <div class="node-title">Company UI</div>
+            <div class="node-sub">brief + repo list</div>
+          </div>
+          <div class="node node-teal" onclick="show('arch-ui')">
+            <div class="node-title">Architecture UI</div>
+            <div class="node-sub">canvas + score + brief</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector-label">HTTPS · SSE stream back</div>
+      <div class="connectors"><div class="connector-line"></div></div>
+
+      <div class="layer-label">Cloud Run — FastAPI (no timeout)</div>
+      <div class="container-node cn-purple">
+        <div class="container-title">cto-compass-api · backend/app/</div>
+        <div class="inner-grid cols-3">
+          <div class="node node-purple" onclick="show('research')">
+            <div class="node-title">/research</div>
+            <div class="node-sub">×6 parallel</div>
+          </div>
+          <div class="node node-purple" onclick="show('analyse')">
+            <div class="node-title">/analyse</div>
+            <div class="node-sub">repo → components</div>
+          </div>
+          <div class="node node-purple" onclick="show('brief')">
+            <div class="node-title">/brief</div>
+            <div class="node-sub">strategy synthesis</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector-label">Anthropic SDK + tools</div>
+      <div class="connectors"><div class="connector-line"></div></div>
+
+      <div class="layer-label">External services</div>
+      <div class="row-3">
+        <div class="node node-coral" onclick="show('claude')">
+          <div class="node-title">claude-sonnet-4-6</div>
+          <div class="node-sub">web_search · tool use</div>
+        </div>
+        <div class="node node-amber" onclick="show('github')">
+          <div class="node-title">GitHub API</div>
+          <div class="node-sub">tree + content</div>
+        </div>
+        <div class="node node-pink" onclick="show('turso')">
+          <div class="node-title">Turso libSQL</div>
+          <div class="node-sub">analysis library</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Detail panel -->
+    <div class="detail-panel" id="detail-panel-1">
+      <div class="detail-placeholder" id="detail-placeholder">
+        <div class="icon">◇</div>
+        <p>Click any component<br>to see its contract,<br>code pattern, and team sign-off.</p>
+      </div>
+      <div id="detail-content"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 2 — Company tab fanout                                -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">02</span>
+    <span class="section-title">Company Tab — Six parallel /research calls</span>
+  </div>
+  <div class="section-sub">
+    The Company tab was originally a single Claude call asking for five dimensions in one prompt. Output quality on the last two dimensions was visibly weaker — recency bias against trailing context. Decomposed into six parallel calls, each scoped to one aspect, total wall-clock dropped from ~50s to ~15s and per-aspect quality became uniform.
+  </div>
+
+  <div class="panel">
+    <div class="fanout">
+      <div class="fanout-input">"OpenAI"</div>
+      <div class="fanout-fan">
+        <div class="fanout-line"></div>
+        <div class="fanout-line"></div>
+        <div class="fanout-line"></div>
+        <div class="fanout-line"></div>
+        <div class="fanout-line"></div>
+        <div class="fanout-line"></div>
+      </div>
+      <div class="row-6">
+        <div class="node node-coral" onclick="show('aspect-product')">
+          <div class="node-title">product</div>
+          <div class="node-sub">portfolio · use cases</div>
+        </div>
+        <div class="node node-coral" onclick="show('aspect-market')">
+          <div class="node-title">market</div>
+          <div class="node-sub">competitors · position</div>
+        </div>
+        <div class="node node-coral" onclick="show('aspect-growth')">
+          <div class="node-title">growth</div>
+          <div class="node-sub">funding · hiring</div>
+        </div>
+        <div class="node node-coral" onclick="show('aspect-leadership')">
+          <div class="node-title">leadership</div>
+          <div class="node-sub">team · culture</div>
+        </div>
+        <div class="node node-coral" onclick="show('aspect-prep')">
+          <div class="node-title">prep</div>
+          <div class="node-sub">questions · red flags</div>
+        </div>
+        <div class="node node-coral" onclick="show('aspect-repos')">
+          <div class="node-title">repos</div>
+          <div class="node-sub">GitHub · analysable</div>
+        </div>
+      </div>
+      <div style="height: 16px"></div>
+      <div class="connectors"><div class="connector-line up"></div></div>
+      <div class="fanout-output">Structured intelligence brief · ~15s total</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 3 — Architecture tab sequence                         -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">03</span>
+    <span class="section-title">Architecture Tab — /analyse → canvas → /brief</span>
+  </div>
+  <div class="section-sub">
+    Three sequential calls. The token-budgeted tree walk is the gate that lets large repos fit — files are ranked by architectural relevance (manifests → entry points → top-level src → tests) and content is capped at a token budget, not a file count.
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="seq">
+        <div class="seq-step">1</div>
+        <div>
+          <div class="node node-purple" onclick="show('seq-tree')">
+            <div class="node-title">GitHub tree walk · token-budgeted</div>
+            <div class="node-sub">rank → truncate by token budget, not file count</div>
+          </div>
+        </div>
+
+        <div class="seq-step">2</div>
+        <div>
+          <div class="node node-coral" onclick="show('seq-analyse')">
+            <div class="node-title">Claude · /analyse</div>
+            <div class="node-sub">returns components + edges + per-component evidence</div>
+          </div>
+        </div>
+
+        <div class="seq-step">3</div>
+        <div>
+          <div class="node node-teal" onclick="show('seq-canvas')">
+            <div class="node-title">Canvas layout · deterministic</div>
+            <div class="node-sub">lanes assigned by component type · positions by code, not by Claude</div>
+          </div>
+        </div>
+
+        <div class="seq-step">4</div>
+        <div>
+          <div class="node node-coral" onclick="show('seq-score')">
+            <div class="node-title">Claude · AI readiness scoring</div>
+            <div class="node-sub">5 criteria · evidence + recommended actions per component</div>
+          </div>
+        </div>
+
+        <div class="seq-step">5</div>
+        <div>
+          <div class="node node-coral" onclick="show('seq-brief')">
+            <div class="node-title">Claude · /brief</div>
+            <div class="node-sub">strategy synthesis · what to do next · what we may have missed</div>
+          </div>
+        </div>
+
+        <div class="seq-step">6</div>
+        <div>
+          <div class="node node-pink" onclick="show('seq-save')">
+            <div class="node-title">Turso · save to library</div>
+            <div class="node-sub">analysis persisted · load/delete via UI</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detail-panel-3" style="position: sticky; top: 60px;">
+      <div class="detail-placeholder">
+        <div class="icon">◇</div>
+        <p>Each step has its own<br>contract and failure mode.<br>Click to inspect.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 4 — AI / Non-AI seam                                  -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">04</span>
+    <span class="section-title">The AI / Non-AI Seam — Where Claude Stops</span>
+  </div>
+  <div class="section-sub">
+    Alex's rule from Week 4: AI reads from but never writes directly to deterministic systems; tool-use is the seam. In CTO Compass, every component on the swimlane canvas is positioned by code, not by Claude. If we had asked Claude for coordinates, the layout would drift every call. Claude returns nouns; code computes pixels.
+  </div>
+
+  <div class="panel">
+    <div class="seam-grid">
+      <div class="seam-col ai">
+        <div class="seam-col-label">AI side — Claude</div>
+        <div class="seam-row">Generates company-brief prose</div>
+        <div class="seam-row">Extracts components &amp; edges from repo code</div>
+        <div class="seam-row">Scores AI readiness with evidence</div>
+        <div class="seam-row">Synthesises the strategy brief</div>
+        <div class="seam-row">Answers scoped per-component chat</div>
+      </div>
+      <div class="seam-divider">
+        <div class="seam-divider-line"></div>
+        <div class="seam-divider-label">contract</div>
+        <div class="seam-divider-line"></div>
+      </div>
+      <div class="seam-col det">
+        <div class="seam-col-label">Deterministic side — code</div>
+        <div class="seam-row">FastAPI orchestrates the 6 parallel /research calls</div>
+        <div class="seam-row">GitHub API returns the tree; Python ranks &amp; truncates</div>
+        <div class="seam-row">Canvas assigns x/y by lane &amp; order, not by Claude</div>
+        <div class="seam-row">Turso persists every analysis · CRUD via libSQL</div>
+        <div class="seam-row">Middleware validates basic auth before any route runs</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 5 — Data Layer                                        -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">05</span>
+    <span class="section-title">Data Layer — Turso, Secrets, Env</span>
+  </div>
+  <div class="section-sub">
+    No vectors, no RAG. The data layer is a single Turso libSQL database for analysis persistence plus GCP Secret Manager for credentials. Frontend env vars are baked at deploy time on Vercel; backend env vars resolve at runtime on Cloud Run via Secret Manager.
+  </div>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="row-3">
+        <div class="node node-pink" onclick="show('data-turso')" style="padding: 16px 18px">
+          <div class="node-title">Turso libSQL</div>
+          <div class="node-sub" style="margin-top: 6px">analyses table · save / load / delete via libSQL HTTP</div>
+        </div>
+        <div class="node node-amber" onclick="show('data-secrets')" style="padding: 16px 18px">
+          <div class="node-title">Secret Manager</div>
+          <div class="node-sub" style="margin-top: 6px">ANTHROPIC_API_KEY · GITHUB_TOKEN · TURSO_AUTH_TOKEN</div>
+        </div>
+        <div class="node node-teal" onclick="show('data-env')" style="padding: 16px 18px">
+          <div class="node-title">Vercel env vars</div>
+          <div class="node-sub" style="margin-top: 6px">NEXT_PUBLIC_CLOUD_RUN_URL · BASIC_AUTH_USER/PASS</div>
+        </div>
+      </div>
+      <div style="height: 14px"></div>
+      <div class="row-2">
+        <div class="node node-gray" onclick="show('data-no-rag')" style="padding: 14px 16px">
+          <div class="node-title">No RAG in this capstone</div>
+          <div class="node-sub" style="margin-top: 4px">Week 4 Chroma stack untouched · not needed for this product</div>
+        </div>
+        <div class="node node-gray" onclick="show('data-no-mcp')" style="padding: 14px 16px">
+          <div class="node-title">No MCP in this capstone</div>
+          <div class="node-sub" style="margin-top: 4px">Tool-use yes (web_search, GitHub) · MCP transport no</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-panel" id="detail-panel-5">
+      <div class="detail-placeholder">
+        <div class="icon">◇</div>
+        <p>What is in the data layer<br>and what is deliberately not.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- SECTION 6 — Latent defect                                     -->
+<!-- ============================================================ -->
+<div class="section">
+  <div class="section-head">
+    <span class="section-num">06</span>
+    <span class="section-title">Configured ≠ Enforcing — The Latent Defect</span>
+  </div>
+  <div class="section-sub">
+    The single most generalisable architectural lesson of the capstone. Branch protection on main had been configured in Week 1 of this product, visibly present in the GitHub UI through every subsequent week, and visibly being bypassed on every direct push. Three independent defects compounded to make the gate ornamental rather than enforced. The discovery: every architectural contract needs an enforcer behind it, and the only proof is running the failing case.
+  </div>
+
+  <div class="defect-panel">
+    <div class="defect-grid">
+      <div class="defect-card">
+        <div class="defect-card-num">DEFECT 1</div>
+        <div class="defect-card-title">CI trigger</div>
+        <div class="defect-card-mech">
+          ci.yml had <span style="font-family:var(--mono);color:var(--coral)">on: pull_request</span> only — no push trigger. Direct pushes to main never created a check run for protection to evaluate.
+        </div>
+      </div>
+      <div class="defect-card">
+        <div class="defect-card-num">DEFECT 2</div>
+        <div class="defect-card-title">enforce_admins</div>
+        <div class="defect-card-mech">
+          Set to <span style="font-family:var(--mono);color:var(--coral)">false</span> at repo creation. Admin (the only user) bypassed the rule on every push with a warning that was easy to ignore.
+        </div>
+      </div>
+      <div class="defect-card">
+        <div class="defect-card-num">DEFECT 3</div>
+        <div class="defect-card-title">default_branch</div>
+        <div class="defect-card-mech">
+          GitHub had <span style="font-family:var(--mono);color:var(--coral)">setup/scaffold-and-schema</span> as default, not main. gh pr create silently retargeted PRs against the wrong base.
+        </div>
+      </div>
+    </div>
+
+    <div style="font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 18px; margin-bottom: 6px">Before the fix — the bypass warning we missed for weeks</div>
+    <div class="defect-proof" style="border-left-color: var(--coral); color: var(--coral)">remote: Bypassed rule violations for refs/heads/main:
+remote: - Required status check "test" is expected.</div>
+
+    <div style="font-family: var(--mono); font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; margin-top: 14px; margin-bottom: 6px">After the fix — the rejection that proves the gate now bites</div>
+    <div class="defect-proof">remote: error: GH006: Protected branch update failed for refs/heads/main.
+remote: - Required status check "test" is expected.
+ ! [remote rejected] main -&gt; main (protected branch hook declined)</div>
+
+    <div class="defect-principle">
+      Every contract needs an enforcer. Configured ≠ enforcing. Run the failing case.
+    </div>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background: var(--teal)"></div>Vercel · Next.js</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--purple)"></div>Cloud Run · FastAPI</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--coral)"></div>Claude · AI</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--amber)"></div>External · GitHub / Secrets</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--pink)"></div>Data · Turso</div>
+  <div class="legend-item"><div class="legend-dot" style="background: var(--gray)"></div>Not used · deliberately absent</div>
+</div>
+
+</div>
+
+<script>
+const DATA = {
+
+  // ── Section 1: System map ────────────────────────────────
+  'user-company': {
+    tag: 'Entry point',
+    title: 'Company tab user',
+    color: 'var(--gray)',
+    subtitle: 'Free-text company name → structured intelligence brief',
+    desc: 'The Company tab is the first screen. User types a company name (e.g. "Anthropic"), hits enter, watches a six-section brief stream in over ~15 seconds. The brief ends with a list of public GitHub repositories — each with an Analyse button that hands the URL to the Architecture tab.',
+    code: '<span class="cm">// Input contract</span>\n{ company: <span class="st">"OpenAI"</span> }\n\n<span class="cm">// Output contract</span>\n{\n  product: { portfolio, useCases, pricing },\n  market: { competitors, positioning },\n  growth: { funding, hiring },\n  leadership: { team, culture },\n  prep: { questions, redFlags },\n  repos: [{ url, name, description }]\n}',
+    rules: [
+      'Single free-text input — no parameters, no filters',
+      'Output is structured JSON; the UI renders the same shape on every brief',
+      'Repos list connects directly to the Architecture tab via the Analyse button',
+      'Streaming SSE — sections appear as they complete, not all at once',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'Streaming UX is the difference between "waiting" and "watching it think".' }]
+  },
+
+  'user-arch': {
+    tag: 'Entry point',
+    title: 'Architecture tab user',
+    color: 'var(--gray)',
+    subtitle: 'GitHub URL → swimlane canvas + AI score + strategy brief',
+    desc: 'The Architecture tab is reachable directly (paste a URL) or via the Analyse button on the Company tab. The user sees a swimlane canvas, an AI readiness score strip, per-component insight panels, and a strategy brief. Pan, zoom, focus mode, and a scoped AI chat let the user drill into anything.',
+    code: '<span class="cm">// Input contract</span>\n{ url: <span class="st">"https://github.com/owner/repo"</span> }\n\n<span class="cm">// Output contract</span>\n{\n  components: [{ id, label, type, lane, evidence }],\n  edges: [{ from, to, kind }],\n  scores: { criterion: { score, evidence, action } },\n  brief: { foundation, opportunities, risks, priorities }\n}',
+    rules: [
+      'Public repos only — GitHub token used is contents:read for public scope',
+      'Token-budgeted tree walk — large repos fit, small repos include everything',
+      'Layout is deterministic — same repo analysed twice produces the same canvas',
+      'Analysis saved to Turso automatically — accessible from the library tab',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Two entry points, one analysis pipeline. Repo URL is the contract.' }]
+  },
+
+  middleware: {
+    tag: 'cto-compass/src/middleware.ts',
+    title: 'middleware.ts',
+    color: 'var(--teal)',
+    subtitle: 'Basic auth gate · runs before any route',
+    desc: 'HTTP basic auth middleware that runs before any route handler. Validates the Authorization header against BASIC_AUTH_USER and BASIC_AUTH_PASS env vars. Returns 401 with WWW-Authenticate to prompt browser login. Adequate for single-user demo over HTTPS; not multi-user safe and not a substitute for real auth.',
+    code: '<span class="kw">export function</span> <span class="fn">middleware</span>(req: NextRequest) {\n  <span class="kw">const</span> auth = req.headers.<span class="fn">get</span>(<span class="st">"authorization"</span>);\n  <span class="kw">if</span> (!<span class="fn">isValid</span>(auth)) {\n    <span class="kw">return new</span> <span class="fn">NextResponse</span>(<span class="st">"Auth required"</span>, {\n      status: <span class="co">401</span>,\n      headers: { <span class="st">"WWW-Authenticate"</span>: <span class="st">"Basic"</span> },\n    });\n  }\n}\n\n<span class="cm">// middleware.ts must live in src/ when using src/app/</span>',
+    rules: [
+      'middleware.ts must live in src/ (not project root) when using src/app/',
+      'Credentials in Vercel env vars — never committed, never rendered',
+      'Basic auth over HTTPS only — credentials base64-encoded, not encrypted',
+      'Single-user pattern · real auth (Clerk, NextAuth) before any second user joins',
+    ],
+    owners: [
+      { label: 'Morgan', cls: 'owner-morgan', note: 'Adequate for demo. Documented as limitation, not a final design.' },
+      { label: 'Alex', cls: 'owner-alex', note: 'Auth lives at the edge — every route handler can assume the user is authenticated.' }
+    ]
+  },
+
+  'company-ui': {
+    tag: 'cto-compass/src/app/(company)/',
+    title: 'Company UI',
+    color: 'var(--teal)',
+    subtitle: 'Input · streaming brief · repo list with Analyse buttons',
+    desc: 'The Company tab UI. A single text input dispatches to /research (×6 parallel on the backend). The brief renders progressively as sections complete — five derived states (idle / thinking / streaming / complete / error) driven by isLoading, message presence, and content length. The repos list is the bridge to the Architecture tab.',
+    code: '<span class="cm">// Five AI states · derived, not stored</span>\n<span class="kw">const</span> state =\n  !sent          ? <span class="st">"idle"</span>\n  : !started     ? <span class="st">"thinking"</span>\n  : !complete    ? <span class="st">"streaming"</span>\n  : error        ? <span class="st">"error"</span>\n                 : <span class="st">"complete"</span>;',
+    rules: [
+      'States derived from props, never stored as an enum — single source of truth',
+      'SSE EventSource pattern — sections appear independently as they finish',
+      'No persistence on this tab · briefs are ephemeral until you Analyse a repo',
+      'Repo list opens the Architecture tab with the URL pre-filled',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'Five states cover every reality; binary loading/loaded misses three of them.' }]
+  },
+
+  'arch-ui': {
+    tag: 'cto-compass/src/app/(architecture)/',
+    title: 'Architecture UI',
+    color: 'var(--teal)',
+    subtitle: 'Canvas · AI score strip · scoped chat · library',
+    desc: 'The Architecture tab UI. Pan/zoom canvas built on transformed div with CSS transform. Wheel zooms centred on cursor; drag on background pans; drag on nodes moves within lane constraints; click selects. Focus mode dims everything except the selected component and its connected edges. AI score strip across the top; expandable score cards reveal evidence and recommended actions. Library tab below the canvas lists saved analyses.',
+    code: '<span class="cm">// Single transformed div · pan + zoom + focus</span>\n&lt;div style={{\n  transform: <span class="st">`translate(${pan.x}px, ${pan.y}px)\n             scale(${zoom})`</span>,\n  transformOrigin: <span class="st">"0 0"</span>,\n}}&gt;\n  {components.<span class="fn">map</span>(c =&gt; &lt;Component .../&gt;)}\n  {edges.<span class="fn">map</span>(e =&gt; &lt;Edge .../&gt;)}\n&lt;/div&gt;',
+    rules: [
+      'Pan/zoom/focus all live on one transformed container — single source of truth',
+      'Component positions are computed deterministically by lane &amp; order',
+      'Drag is constrained — components cannot leave their lane',
+      'Scoped chat is anchored to the currently selected component',
+    ],
+    owners: [
+      { label: 'Casey', cls: 'owner-casey', note: 'Pan/zoom on the same transform that drives layout — no dual sources of truth.' },
+      { label: 'Sam', cls: 'owner-sam', note: 'Drag is constrained client-side — Claude has no opinion about positions.' }
+    ]
+  },
+
+  research: {
+    tag: 'cto-compass-api/research',
+    title: '/research',
+    color: 'var(--purple)',
+    subtitle: '×6 parallel Claude calls, each scoped to one aspect',
+    desc: 'FastAPI orchestrator that fans out six parallel asyncio tasks. Each task calls Claude with web_search enabled and a scoped prompt for one aspect (product, market, growth, leadership, prep, repos). Results stream back via SSE. Total wall-clock: ~15s for six aspects. Prompt caching absorbs the static system-prompt portion at ~90% discount on cache hits.',
+    code: '<span class="kw">async def</span> <span class="fn">research</span>(company: str):\n    tasks = [\n        <span class="fn">aspect</span>(<span class="st">"product"</span>, company),\n        <span class="fn">aspect</span>(<span class="st">"market"</span>, company),\n        <span class="fn">aspect</span>(<span class="st">"growth"</span>, company),\n        <span class="fn">aspect</span>(<span class="st">"leadership"</span>, company),\n        <span class="fn">aspect</span>(<span class="st">"prep"</span>, company),\n        <span class="fn">aspect</span>(<span class="st">"repos"</span>, company),\n    ]\n    <span class="kw">async for</span> result <span class="kw">in</span> asyncio.<span class="fn">as_completed</span>(tasks):\n        <span class="kw">yield</span> <span class="fn">sse</span>(<span class="kw">await</span> result)',
+    rules: [
+      'Each aspect uses its own targeted search query — not one mega-prompt',
+      'Cost grows linearly with aspects; quality grows more than linearly',
+      'Prompt caching on system prompt — ~90% discount on the cached portion',
+      'asyncio.as_completed yields results in completion order — UI renders progressively',
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Pattern is generalisable: decompose any time a single call has uneven sub-task quality.' }]
+  },
+
+  analyse: {
+    tag: 'cto-compass-api/analyse',
+    title: '/analyse',
+    color: 'var(--purple)',
+    subtitle: 'Repo tree → token-budgeted file selection → Claude',
+    desc: 'Two-stage pipeline. Stage 1: deterministic file selection from the GitHub tree, ranked by architectural relevance (manifests → entry points → top-level src → tests), truncated by token budget. Stage 2: Claude reads the selected content and returns components, edges, and per-component evidence. AI readiness scoring runs as a follow-up call against the same context.',
+    code: '<span class="cm"># Two-stage: deterministic + AI</span>\n<span class="kw">def</span> <span class="fn">select_files</span>(tree, budget):\n    ranked = <span class="fn">sorted</span>(tree, key=architectural_rank)\n    selected, used = [], <span class="co">0</span>\n    <span class="kw">for</span> f <span class="kw">in</span> ranked:\n        <span class="kw">if</span> used + f.tokens &gt; budget: <span class="kw">break</span>\n        selected.<span class="fn">append</span>(f); used += f.tokens\n    <span class="kw">return</span> selected\n\n<span class="cm"># Then hand selected files to Claude</span>',
+    rules: [
+      'File count is dynamic — token budget is the contract, not file count',
+      'Ranking heuristic favours manifests &amp; entry points over tests &amp; vendored code',
+      'AI never sees a file the budget rejected — no smuggling',
+      'Same repo + same budget → same selection (deterministic)',
+    ],
+    owners: [
+      { label: 'Alex', cls: 'owner-alex', note: 'Two-stage seam: rank deterministically, reason probabilistically.' },
+      { label: 'Sam', cls: 'owner-sam', note: 'Token budget beats file count — large repos no longer drop their config in favour of tests.' }
+    ]
+  },
+
+  brief: {
+    tag: 'cto-compass-api/brief',
+    title: '/brief',
+    color: 'var(--purple)',
+    subtitle: 'Strategy synthesis · what to do · what we may have missed',
+    desc: 'Final Claude call in the Architecture tab pipeline. Takes the components, edges, and scores from /analyse and synthesises a strategy brief: technical foundation strengths, AI opportunities, what to avoid, near-term priorities, and a meta section on what the analysis may have missed. The "may have missed" section is intentional epistemic humility — telling the user what the analysis is not.',
+    code: '<span class="cm"># The "what we may have missed" section</span>\n<span class="cm"># is the difference between a confident answer</span>\n<span class="cm"># and a useful answer.</span>\n\nsystem_prompt = <span class="st">"""\nProduce a strategy brief from the analysis.\nEnd with a section listing what this analysis\nmay have missed: things the file selection\ncould not surface, signals only an interview\nwould reveal, areas where the repo is silent.\n"""</span>',
+    rules: [
+      'Final synthesis call — uses the analysis output as input, not the raw repo',
+      'Always includes a "may have missed" section — epistemic humility by prompt',
+      'Output is prose, not JSON — read by humans, not parsers',
+      'Token cost is small relative to /analyse — context is already shaped',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'Telling the user what the analysis is NOT is the cheapest trust signal in the product.' }]
+  },
+
+  claude: {
+    tag: 'Anthropic API',
+    title: 'claude-sonnet-4-6',
+    color: 'var(--coral)',
+    subtitle: 'Model · web_search · prompt caching',
+    desc: 'Production model for every Claude call in CTO Compass. Same model the bootcamp has used since Week 1. web_search_20250305 tool enabled on /research calls. Prompt caching enabled on the static system-prompt portion of all repeated calls — first call pays full price, subsequent calls within 5 minutes pay ~10% on the cached prefix.',
+    code: '<span class="kw">await</span> client.messages.<span class="fn">create</span>(\n    model=<span class="st">"claude-sonnet-4-6"</span>,\n    max_tokens=<span class="co">4096</span>,\n    system=[\n        { <span class="st">"type"</span>: <span class="st">"text"</span>, <span class="st">"text"</span>: STATIC_PROMPT,\n          <span class="st">"cache_control"</span>: { <span class="st">"type"</span>: <span class="st">"ephemeral"</span> }},\n    ],\n    tools=[{<span class="st">"type"</span>: <span class="st">"web_search_20250305"</span>, <span class="st">"name"</span>: <span class="st">"web_search"</span>}],\n    messages=[...]\n)',
+    rules: [
+      'Model string pinned: claude-sonnet-4-6 — never "latest"',
+      'cache_control on the static system prompt portion only',
+      'web_search tool only on /research — not on /analyse or /brief',
+      'Same model · three different call shapes · three different cost profiles',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'One model, three call shapes. Prompt caching is the cost-control seam.' }]
+  },
+
+  github: {
+    tag: 'GitHub REST API',
+    title: 'GitHub API',
+    color: 'var(--amber)',
+    subtitle: 'Repo tree + file contents · contents:read on public scope',
+    desc: 'Used by /analyse to read public repository structure and file content. Fine-grained personal access token with contents:read on public repos only — minimum privilege. Rate-limited to 5000 req/hr for authenticated calls; the token-budgeted file selection keeps us well under that on any single analysis.',
+    code: '<span class="cm"># Two GitHub endpoints used:</span>\nGET /repos/{owner}/{repo}/git/trees/{sha}?recursive=1\nGET /repos/{owner}/{repo}/contents/{path}\n\n<span class="cm"># Token scope: contents:read on public repos only</span>\n<span class="cm"># No write access · no private repo access</span>',
+    rules: [
+      'Fine-grained PAT — contents:read public only · least privilege',
+      'Token stored in Secret Manager, resolved by Cloud Run at runtime',
+      'Tree walk is recursive in one call — file contents fetched lazily',
+      'Rate limit 5000/hr — token-budgeted selection keeps usage low per analysis',
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Least privilege on the token · no path to private data even if compromised.' }]
+  },
+
+  turso: {
+    tag: 'Turso libSQL',
+    title: 'Turso libSQL · analysis library',
+    color: 'var(--pink)',
+    subtitle: 'Serverless-friendly SQLite · HTTP protocol',
+    desc: 'Turso is libSQL (SQLite fork) served over HTTP. Chosen over Cloud SQL because Cloud SQL\'s persistent TCP connection model is incompatible with Vercel serverless and the Cloud Run cold-start lifecycle. HTTP-per-request fits both deployment targets. One table: analyses(id, url, components_json, scores_json, brief_text, created_at).',
+    code: '<span class="cm">-- One table, one purpose</span>\n<span class="kw">CREATE TABLE</span> analyses (\n  id          <span class="kw">TEXT PRIMARY KEY</span>,\n  url         <span class="kw">TEXT NOT NULL</span>,\n  components  <span class="kw">TEXT NOT NULL</span>,  <span class="cm">-- JSON</span>\n  scores      <span class="kw">TEXT NOT NULL</span>,  <span class="cm">-- JSON</span>\n  brief       <span class="kw">TEXT NOT NULL</span>,\n  created_at  <span class="kw">TEXT NOT NULL</span>\n);',
+    rules: [
+      'libSQL over HTTP — no persistent connections, no pool to manage',
+      'JSON columns for nested structures · queried as text, parsed in code',
+      'Auth token in Secret Manager · never in code or env files',
+      'Migration path: per-user partitioning when real auth lands',
+    ],
+    owners: [
+      { label: 'Riley', cls: 'owner-riley', note: 'Right pick for serverless. Cloud SQL would have forced architectural compromises.' },
+      { label: 'Taylor', cls: 'owner-taylor', note: 'HTTP-per-request fits the Cloud Run + Vercel topology cleanly.' }
+    ]
+  },
+
+  // ── Section 2: aspect details ────────────────────────────
+  'aspect-product': {
+    tag: '/research?aspect=product',
+    title: 'Aspect: product',
+    color: 'var(--coral)',
+    subtitle: 'Portfolio · pricing · use cases',
+    desc: 'Scoped Claude call with web_search. Asks for concrete product portfolio: what they make, what it costs, who uses it, what for. The narrowness of the prompt is the point — when this aspect was bundled with four others in a single call, output for the trailing aspects was visibly weaker.',
+    code: 'search_query: <span class="st">f"{company} products pricing customers"</span>\n<span class="cm"># Narrow scope = sharp output</span>',
+    rules: ['One aspect = one search query = one focused prompt', 'Returns concrete use cases, not abstractions'],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Narrower prompts = sharper output. Always.' }]
+  },
+  'aspect-market': {
+    tag: '/research?aspect=market',
+    title: 'Aspect: market',
+    color: 'var(--coral)',
+    subtitle: 'Competitors · positioning · differentiation',
+    desc: 'Asks who they compete with and how they distinguish themselves. Web_search retrieves analyst writeups, competitor mentions, and recent positioning shifts.',
+    code: 'search_query: <span class="st">f"{company} competitors market position"</span>',
+    rules: ['Surface differentiators, not just a competitor list', 'Recent positioning shifts more useful than founding-era claims'],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Look for what changed recently, not what was true at founding.' }]
+  },
+  'aspect-growth': {
+    tag: '/research?aspect=growth',
+    title: 'Aspect: growth',
+    color: 'var(--coral)',
+    subtitle: 'Funding · hiring velocity · revenue signals',
+    desc: 'Funding history, recent rounds, hiring patterns, public revenue signals. The signal that matters: are they growing into the role they\'re hiring for, or backfilling churn?',
+    code: 'search_query: <span class="st">f"{company} funding hiring 2026"</span>',
+    rules: ['Include current year in query — funding history goes stale fast', 'Hiring velocity is a better signal than headline funding'],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Current-year qualifier on the query keeps results fresh.' }]
+  },
+  'aspect-leadership': {
+    tag: '/research?aspect=leadership',
+    title: 'Aspect: leadership',
+    color: 'var(--coral)',
+    subtitle: 'Team · background · engineering culture',
+    desc: 'CEO and exec backgrounds, prior companies, public posts about engineering culture. The interview-prep frame: who is hiring me and what do they care about?',
+    code: 'search_query: <span class="st">f"{company} CEO CTO leadership engineering culture"</span>',
+    rules: ['Leadership writeups age fast — check the date on every result', 'Engineering blog posts more revealing than corporate "about" pages'],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Prior companies of the exec tell you what cultural patterns to expect.' }]
+  },
+  'aspect-prep': {
+    tag: '/research?aspect=prep',
+    title: 'Aspect: prep',
+    color: 'var(--coral)',
+    subtitle: 'Smart questions · red flags · likely priorities',
+    desc: 'Synthesises across the other five aspects to produce the interview-prep portion: questions worth asking, red flags to probe, what the CEO probably cares about right now.',
+    code: '<span class="cm"># Synthesis across aspects · not its own search</span>\n<span class="cm"># Built from the outputs of product + market + growth + leadership</span>',
+    rules: ['No new web_search — synthesises from prior aspects', 'Output is the most user-facing — clarity matters more than depth'],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'This is what users actually skim. Clarity over completeness.' }]
+  },
+  'aspect-repos': {
+    tag: '/research?aspect=repos',
+    title: 'Aspect: repos',
+    color: 'var(--coral)',
+    subtitle: 'Public GitHub repos worth analysing',
+    desc: 'Curated list of public GitHub repos owned by the company, with brief descriptions and an Analyse button per repo. The bridge between the Company tab and the Architecture tab.',
+    code: 'search_query: <span class="st">f"{company} site:github.com"</span>\n<span class="cm"># Each result becomes a card with an Analyse button</span>',
+    rules: ['Curate, do not dump — show repos worth looking at, not every fork', 'Analyse button passes the URL directly to /analyse'],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'This is the seam between the two tabs. Repo URL is the contract.' }]
+  },
+
+  // ── Section 3: Architecture tab sequence ─────────────────
+  'seq-tree': {
+    tag: 'cto-compass-api/tree_walk.py',
+    title: 'Token-budgeted tree walk',
+    color: 'var(--purple)',
+    subtitle: 'Rank files, truncate by token budget',
+    desc: 'Deterministic file selection. GitHub API returns the full repo tree; Python ranks files by architectural relevance and includes content until the token budget is exhausted. Large repos still fit; small repos include everything. The budget is the contract, not the file count.',
+    code: '<span class="cm"># Ranking heuristic</span>\nMANIFESTS = {<span class="st">"package.json"</span>, <span class="st">"pyproject.toml"</span>, ...}\nENTRY     = {<span class="st">"main.py"</span>, <span class="st">"index.ts"</span>, <span class="st">"app.py"</span>, ...}\n\n<span class="kw">def</span> <span class="fn">rank</span>(path):\n    <span class="kw">if</span> path.<span class="fn">name</span> <span class="kw">in</span> MANIFESTS: <span class="kw">return</span> <span class="co">0</span>\n    <span class="kw">if</span> path.<span class="fn">name</span> <span class="kw">in</span> ENTRY:     <span class="kw">return</span> <span class="co">1</span>\n    <span class="kw">if</span> path.<span class="fn">parts</span>[<span class="co">0</span>] <span class="kw">in</span> SRC: <span class="kw">return</span> <span class="co">2</span>\n    <span class="kw">if</span> <span class="st">"test"</span> <span class="kw">in</span> path.<span class="fn">parts</span>:  <span class="kw">return</span> <span class="co">4</span>\n    <span class="kw">return</span> <span class="co">3</span>',
+    rules: [
+      'Manifests first · entry points second · top-level src third · tests last',
+      'Token count via Claude tokenizer — accurate budget enforcement',
+      'Vendored code (node_modules, .venv) skipped before ranking even runs',
+      'Same repo + same budget = same selection (deterministic)',
+    ],
+    owners: [{ label: 'Sam', cls: 'owner-sam', note: 'Replaced 50-file hardcode. Large repos no longer drop config in favour of test directories.' }]
+  },
+  'seq-analyse': {
+    tag: 'Claude · /analyse step 2',
+    title: 'Claude · extract components &amp; edges',
+    color: 'var(--coral)',
+    subtitle: 'Read selected files, return architecture',
+    desc: 'Claude receives the selected file content and returns a structured architecture: components (id, label, type, lane, evidence), edges (from, to, kind), and per-component evidence quoting the source files. The prompt explicitly asks for evidence — every component must point at a file path or code snippet.',
+    code: '<span class="cm"># Output contract enforced by prompt</span>\n{\n  <span class="st">"components"</span>: [{\n    <span class="st">"id"</span>: <span class="st">"backend-api"</span>,\n    <span class="st">"label"</span>: <span class="st">"FastAPI app"</span>,\n    <span class="st">"type"</span>: <span class="st">"backend"</span>,\n    <span class="st">"lane"</span>: <span class="st">"server"</span>,\n    <span class="st">"evidence"</span>: <span class="st">"app/main.py:1-12"</span>\n  }],\n  <span class="st">"edges"</span>: [{\n    <span class="st">"from"</span>: <span class="st">"frontend"</span>, <span class="st">"to"</span>: <span class="st">"backend-api"</span>,\n    <span class="st">"kind"</span>: <span class="st">"http"</span>\n  }]\n}',
+    rules: [
+      'Every component has evidence — no unsupported assertions',
+      'Lanes are constrained to a known set — Claude cannot invent new ones',
+      'Type guides colour and shape in the canvas — also from a fixed enum',
+      'JSON parse failure fails loudly — never silently truncated',
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'Evidence requirement makes hallucinated components self-incriminating.' }]
+  },
+  'seq-canvas': {
+    tag: 'cto-compass/src/canvas/',
+    title: 'Canvas layout · deterministic',
+    color: 'var(--teal)',
+    subtitle: 'Lane assignment · position computation · edge routing',
+    desc: 'Claude returns components with a "lane" string. The canvas code assigns x/y positions deterministically by lane and order within lane. Edges are routed by a simple Manhattan algorithm — no AI involvement. Same components in → same canvas out, every time.',
+    code: '<span class="cm">// Lane order is fixed</span>\n<span class="kw">const</span> LANES = [<span class="st">"client"</span>, <span class="st">"server"</span>, <span class="st">"ai"</span>, <span class="st">"data"</span>, <span class="st">"infra"</span>];\n\n<span class="kw">function</span> <span class="fn">layout</span>(components) {\n  <span class="kw">return</span> components.<span class="fn">map</span>((c, i) =&gt; ({\n    ...c,\n    x: LANES.<span class="fn">indexOf</span>(c.lane) * <span class="co">220</span>,\n    y: <span class="fn">orderInLane</span>(c) * <span class="co">90</span>,\n  }));\n}',
+    rules: [
+      'Layout is pure function of components — no AI in the layout path',
+      'Lane order is fixed — client/server/ai/data/infra · left to right',
+      'Edge routing is deterministic — Manhattan with fixed corner radii',
+      'User drag updates a per-canvas position override · resets via Reset View',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'AI returns nouns; code computes pixels. If Claude returned coordinates the layout would drift every call.' }]
+  },
+  'seq-score': {
+    tag: 'Claude · scoring call',
+    title: 'AI readiness scoring',
+    color: 'var(--coral)',
+    subtitle: '5 criteria · evidence + recommended action per component',
+    desc: 'Second Claude call against the same context. Scores each component on five criteria (e.g. observability, evals, prompt versioning, error handling, cost control) returning a 0-3 score, evidence quoted from the code, and a recommended action. The strip across the top of the canvas is the aggregate view; expanding a card shows the per-component detail.',
+    code: '<span class="cm"># Output shape</span>\n{\n  <span class="st">"observability"</span>: {\n    <span class="st">"score"</span>: <span class="co">1</span>,\n    <span class="st">"evidence"</span>: <span class="st">"logs print to stdout but no structured logging"</span>,\n    <span class="st">"action"</span>: <span class="st">"add structured logging with request IDs"</span>\n  }, ...\n}',
+    rules: [
+      'Five fixed criteria — Claude cannot invent new ones',
+      '0-3 integer score · 0=absent, 3=production-grade',
+      'Evidence required — same anti-hallucination contract as /analyse',
+      'Action is short and concrete — not "improve observability" but a specific next step',
+    ],
+    owners: [{ label: 'Jordan', cls: 'owner-jordan', note: 'Fixed criteria + required evidence keeps scores comparable across repos.' }]
+  },
+  'seq-brief': {
+    tag: 'Claude · /brief call',
+    title: 'Strategy synthesis',
+    color: 'var(--coral)',
+    subtitle: 'Foundation · opportunities · risks · priorities · what we missed',
+    desc: 'Final synthesis. Takes components + scores as input and writes the strategy brief in prose. Five sections including the explicit "what this analysis may have missed" — naming what the file selection could not surface, signals only an interview would reveal, areas where the repo is silent. Honest about its own limits.',
+    code: '<span class="cm"># Five sections, last is the honest one</span>\n1. Technical foundation\n2. AI opportunities\n3. What to avoid\n4. Near-term priorities\n5. What this analysis may have missed',
+    rules: [
+      '"May have missed" section is non-optional — prompt enforces it',
+      'Prose output · meant for humans, not parsers',
+      'Reuses prompt-cached system prompt — low marginal cost per analysis',
+      'Token usage smallest of the three calls — context already shaped',
+    ],
+    owners: [{ label: 'Casey', cls: 'owner-casey', note: 'Telling the user what we did NOT cover is the cheapest trust signal we ship.' }]
+  },
+  'seq-save': {
+    tag: 'Turso · save',
+    title: 'Save to library',
+    color: 'var(--pink)',
+    subtitle: 'Persist every analysis · loadable from library tab',
+    desc: 'Every completed analysis is saved to Turso automatically — no save button required. The library tab lists saved analyses with timestamp, URL, and the AI score summary. Delete is single-button; reload renders the canvas from saved JSON without re-running the analysis.',
+    code: '<span class="cm"># Save is fire-and-forget after analysis completes</span>\n<span class="kw">await</span> turso.<span class="fn">execute</span>({\n  sql: <span class="st">"INSERT INTO analyses VALUES (?, ?, ?, ?, ?, ?)"</span>,\n  args: [id, url, components_json, scores_json, brief, now],\n})',
+    rules: [
+      'Save is non-blocking — failure does not affect the rendered analysis',
+      'JSON columns store the canvas state — reload skips the AI calls',
+      'Per-user partitioning when real auth lands — currently single-tenant',
+      'Delete is permanent — no soft-delete in this version',
+    ],
+    owners: [{ label: 'Riley', cls: 'owner-riley', note: 'Reload-from-JSON skips ~$0.30 in API costs per re-view. Persistence pays for itself.' }]
+  },
+
+  // ── Section 5: data layer ────────────────────────────────
+  'data-turso': {
+    tag: 'Turso libSQL',
+    title: 'Turso · the only persistent store',
+    color: 'var(--pink)',
+    subtitle: 'analyses table · HTTP-per-request',
+    desc: 'Single Turso libSQL database, one table (analyses). HTTP-per-request fits both Vercel serverless and Cloud Run cold starts. Cloud SQL was rejected: persistent TCP connections do not fit either deployment model without connection-pool gymnastics.',
+    code: '<span class="cm"># Why Turso over Cloud SQL</span>\nVercel serverless    → no persistent connections\nCloud Run cold start → unpredictable connection lifecycle\nTurso libSQL HTTP    → fits both natively',
+    rules: [
+      'HTTP-per-request — no connection pool to manage',
+      'libSQL is SQLite — same query syntax, no learning curve',
+      'Auth token from Secret Manager · never in code',
+      'Backup story: Turso replicas + scheduled exports (post-capstone)',
+    ],
+    owners: [{ label: 'Riley', cls: 'owner-riley', note: 'Picked for compatibility with both deployment targets. Right call for this topology.' }]
+  },
+  'data-secrets': {
+    tag: 'GCP Secret Manager',
+    title: 'Secret Manager',
+    color: 'var(--amber)',
+    subtitle: 'Runtime credential resolution for Cloud Run',
+    desc: 'All backend credentials live in GCP Secret Manager. Cloud Run mounts secrets at runtime via env vars — no credentials in container images, no credentials in git, no credentials in env files. WIF (Workload Identity Federation) is the auth path from GitHub Actions to GCP for deploys.',
+    code: '<span class="cm"># Cloud Run service definition</span>\nenv:\n  - name: ANTHROPIC_API_KEY\n    valueFrom:\n      secretKeyRef:\n        name: anthropic-api-key\n        key: latest',
+    rules: [
+      'No credentials in git history — verified via git log --all -p | grep -i api_key',
+      'No credentials in container images — Secret Manager mounts at runtime',
+      'WIF replaces long-lived service account keys for deploy auth',
+      'Secret scanning + push protection enabled on the public repo',
+    ],
+    owners: [{ label: 'Morgan', cls: 'owner-morgan', note: 'git log clean. Secret scanning + push protection on. Capstone DoD gate satisfied.' }]
+  },
+  'data-env': {
+    tag: 'Vercel env vars',
+    title: 'Vercel env vars · frontend secrets',
+    color: 'var(--teal)',
+    subtitle: 'Baked at deploy time · dashboard managed',
+    desc: 'Frontend env vars are baked into the build at deploy time on Vercel. Changing a value in the dashboard does not affect a running deployment — a redeploy is required. NEXT_PUBLIC_ prefix means visible to the browser; non-prefixed values are server-side only (middleware, server components).',
+    code: '<span class="cm"># What lives on Vercel</span>\nNEXT_PUBLIC_CLOUD_RUN_URL   <span class="cm"># browser-visible</span>\nBASIC_AUTH_USER             <span class="cm"># middleware only</span>\nBASIC_AUTH_PASS             <span class="cm"># middleware only</span>\nTURSO_DATABASE_URL          <span class="cm"># server only</span>\nTURSO_AUTH_TOKEN            <span class="cm"># server only</span>',
+    rules: [
+      'NEXT_PUBLIC_ prefix is the trust boundary — anything prefixed reaches the browser',
+      'Env vars baked at deploy — dashboard changes require a redeploy',
+      'Basic auth credentials live here · rotate by changing the value and redeploying',
+      'Turso credentials duplicated here (frontend) and in Cloud Run env (backend)',
+    ],
+    owners: [{ label: 'Taylor', cls: 'owner-taylor', note: 'Deploy-time bake means env changes always have a corresponding deploy record · audit trail by default.' }]
+  },
+  'data-no-rag': {
+    tag: 'Deliberately absent',
+    title: 'No RAG in this capstone',
+    color: 'var(--gray)',
+    subtitle: 'Week 4 Chroma stack untouched · not needed for this product',
+    desc: 'CTO Compass does not use vector retrieval. The retrieval pattern is GitHub-API-then-Claude, not vectors-then-Claude. The doc-qa Week 4 Chroma stack is untouched. Adding RAG would have been complexity for its own sake at this scale. If CTO Compass v2 includes "compare this candidate against companies you have analysed before," that is when Pinecone joins the stack.',
+    code: '<span class="cm"># What we use instead of RAG</span>\nfor file in selected_files:        <span class="cm"># deterministic</span>\n    content += fetch(file)         <span class="cm"># exhaustive within budget</span>\nclaude.analyse(content)            <span class="cm"># no vectors</span>',
+    rules: [
+      'Vector retrieval adds an embedding-quality dimension to debug',
+      'Token-budgeted exhaustive read is simpler when the corpus fits',
+      'Will add RAG when corpus exceeds what fits in any single context',
+      'Week 4 retrieval stack is reusable when that day comes',
+    ],
+    owners: [{ label: 'Riley', cls: 'owner-riley', note: 'Right not to add it. Premature complexity is the most common AI architecture mistake.' }]
+  },
+  'data-no-mcp': {
+    tag: 'Deliberately absent',
+    title: 'No MCP in this capstone',
+    color: 'var(--gray)',
+    subtitle: 'Tool-use yes · MCP transport no',
+    desc: 'CTO Compass uses tool-use (web_search via Anthropic, GitHub API via FastAPI) but does not use MCP as a transport. MCP is the right pattern when tools need to be reusable across hosts; here the tools are CTO-Compass-specific and embedded in the API service. The doc-qa Week 7 MCP server pattern stands as the reference for when MCP is the right move.',
+    code: '<span class="cm"># In-process tool use (this product)</span>\nclient.messages.<span class="fn">create</span>(\n    tools=[{<span class="st">"type"</span>: <span class="st">"web_search_20250305"</span>, ...}]\n)\n\n<span class="cm"># MCP server pattern (doc-qa Week 7)</span>\n<span class="cm"># Same tools · different transport · reusable across hosts</span>',
+    rules: [
+      'In-process tools are simpler when tools are not reused elsewhere',
+      'MCP becomes worthwhile at >1 host or >1 product needing the same tool',
+      'Week 7 MCP server pattern is the canonical example in this codebase',
+      'CTO Compass v2 could expose itself as an MCP server — future work',
+    ],
+    owners: [{ label: 'Alex', cls: 'owner-alex', note: 'Choose MCP when tools are reusable. Choose in-process when they are not. Simple as that.' }]
+  },
+};
+
+function show(id) {
+  if (!DATA[id]) return;
+  document.querySelectorAll('.node, .user-node').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll(`[onclick*="show('${id}')"]`).forEach(n => n.classList.add('active'));
+
+  const d = DATA[id];
+  const placeholder = document.getElementById('detail-placeholder');
+  const content = document.getElementById('detail-content');
+  if (placeholder) placeholder.style.display = 'none';
+  content.style.display = 'block';
+
+  const ownersHtml = d.owners && d.owners.length ? `
+    <div class="detail-section">
+      <div class="detail-section-label">Team sign-off</div>
+      <ul class="detail-rules">
+        ${d.owners.map(o => `<li><span class="owner-tag ${o.cls}">${o.label}</span>${o.note}</li>`).join('')}
+      </ul>
+    </div>` : '';
+
+  content.innerHTML = `
+    <div class="detail-header">
+      <div class="detail-tag">${d.tag}</div>
+      <div class="detail-title" style="color:${d.color}">${d.title}</div>
+      <div class="detail-subtitle">${d.subtitle}</div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-section">
+        <div class="detail-section-label">What it does</div>
+        <div class="detail-desc">${d.desc}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Code / pattern</div>
+        <div class="detail-code">${d.code}</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-label">Rules &amp; gotchas</div>
+        <ul class="detail-rules">
+          ${d.rules.map(r => `<li>${r}</li>`).join('')}
+        </ul>
+      </div>
+      ${ownersHtml}
+    </div>`;
+
+  // Scroll the panel into view smoothly
+  const panel = content.closest('.detail-panel');
+  if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+</script>
+
+</body>
+</html>
